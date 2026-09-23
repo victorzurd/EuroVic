@@ -26,7 +26,6 @@ const CATEGORIAS_VALIDAS = {
   'Varios': '✨'
 };
 
-// Función para forzar que el texto siempre coincida con una categoría del Frontend
 function normalizarCategoria(catRaw) {
   if (!catRaw) return 'Varios';
   const str = catRaw.toString().trim().toLowerCase();
@@ -68,16 +67,18 @@ export default async function handler(req, res) {
 
   try {
     const supabase = getSupabaseClient();
+    
+    // Llamada obligatoria a Gemini (si falla, saltará directo al catch)
     const gastoRaw = await analizarGastoConGemini(texto);
 
     if (!gastoRaw || !gastoRaw.monto || isNaN(gastoRaw.monto) || gastoRaw.monto <= 0) {
       return res.status(400).json({
-        error: 'No se pudo detectar un importe/monto válido en el texto provisto.',
-        textoProcesado: texto
+        error: 'Gemini procesó la petición pero no devolvió un monto válido.',
+        textoProcesado: texto,
+        respuestaIA: gastoRaw
       });
     }
 
-    // Normalización estricta antes de guardar en Postgres
     const categoriaFinal = normalizarCategoria(gastoRaw.categoria);
     const emojiFinal = CATEGORIAS_VALIDAS[categoriaFinal] || '✨';
 
@@ -104,11 +105,16 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error en webhook.js:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Error de IA en webhook.js:', error);
+    // Devuelve el error exacto de la API para que lo veas directamente en la web
+    return res.status(500).json({ error: `[ERROR IA] ${error.message}` });
   }
 }
 
+/* 
+// =========================================================================
+// ⛔ PARTE REGEX / FALLBACK DESACTIVADA PARA PRUEBAS
+// =========================================================================
 function extraerGastoPorRegex(texto) {
   const matchMonto = texto.match(/(\d+[\.,]?\d*)\s*(?:€|EUR|euros)/i) || 
                      texto.match(/(?:pago|compra|importe) (?:de )?(\d+[\.,]?\d*)/i);
@@ -130,6 +136,7 @@ function extraerGastoPorRegex(texto) {
     emoji: CATEGORIAS_VALIDAS[categoria] 
   };
 }
+*/
 
 async function analizarGastoConGemini(texto) {
   let apiKey = process.env.GEMINI_API_KEY;
@@ -139,53 +146,51 @@ async function analizarGastoConGemini(texto) {
   }
 
   if (!apiKey) {
-    return extraerGastoPorRegex(texto);
+    throw new Error('Falta la variable de entorno GEMINI_API_KEY en Vercel.');
   }
 
-  // Se requiere v1beta para la validación estricta del Schema JSON
   const model = 'gemini-1.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const promptText = `Extrae la información del gasto bancario del siguiente texto:
 "${texto}"`;
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: promptText }] }],
-        generationConfig: {
-          response_mime_type: 'application/json',
-          response_schema: {
-            type: 'OBJECT',
-            properties: {
-              comercio: { type: 'STRING' },
-              monto: { type: 'NUMBER' },
-              categoria: { 
-                type: 'STRING', 
-                enum: ['Shopping', 'Self Care', 'Brunch & Desayunos', 'Cenas & Copas', 'Fiesta & Eventos', 'Supermercado', 'Escapadas', 'Movilidad', 'Varios'] 
-              },
-              emoji: { type: 'STRING' }
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: promptText }] }],
+      generationConfig: {
+        response_mime_type: 'application/json',
+        response_schema: {
+          type: 'OBJECT',
+          properties: {
+            comercio: { type: 'STRING' },
+            monto: { type: 'NUMBER' },
+            categoria: { 
+              type: 'STRING', 
+              enum: ['Shopping', 'Self Care', 'Brunch & Desayunos', 'Cenas & Copas', 'Fiesta & Eventos', 'Supermercado', 'Escapadas', 'Movilidad', 'Varios'] 
             },
-            required: ['comercio', 'monto', 'categoria', 'emoji']
-          }
+            emoji: { type: 'STRING' }
+          },
+          required: ['comercio', 'monto', 'categoria', 'emoji']
         }
-      })
-    });
+      }
+    })
+  });
 
-    if (!response.ok) {
-      console.warn(`Gemini API respondió con HTTP ${response.status}. Usando fallback Regex.`);
-      return extraerGastoPorRegex(texto);
-    }
-
-    const data = await response.json();
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    return resultText ? JSON.parse(resultText) : extraerGastoPorRegex(texto);
-
-  } catch (err) {
-    console.warn('Excepción invocando Gemini API, usando fallback Regex:', err);
-    return extraerGastoPorRegex(texto);
+  // Si Google responde con 400, 403, 404, etc., lanzamos una excepción con el detalle del error
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Google Gemini API respondió HTTP ${response.status}: ${errorBody}`);
   }
+
+  const data = await response.json();
+  const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!resultText) {
+    throw new Error('Gemini API devolvió una respuesta vacía o sin candidates.');
+  }
+
+  return JSON.parse(resultText);
 }
