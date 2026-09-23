@@ -13,8 +13,37 @@ function getSupabaseClient() {
   });
 }
 
+// Lista exacta de categorías permitidas en tu Frontend
+const CATEGORIAS_VALIDAS = {
+  'Shopping': '🛍️',
+  'Self Care': '💅',
+  'Brunch & Desayunos': '🥐',
+  'Cenas & Copas': '🍷',
+  'Fiesta & Eventos': '🎉',
+  'Supermercado': '🛒',
+  'Escapadas': '✈️',
+  'Movilidad': '🚗',
+  'Varios': '✨'
+};
+
+// Función para forzar que el texto siempre coincida con una categoría del Frontend
+function normalizarCategoria(catRaw) {
+  if (!catRaw) return 'Varios';
+  const str = catRaw.toString().trim().toLowerCase();
+
+  if (/super|mercadona|carrefour|lidl|alcampo|dia|consum|eroski|alimen|compra/i.test(str)) return 'Supermercado';
+  if (/zara|sephora|mango|shopping|ropa|tienda|moda|pull|bershka/i.test(str)) return 'Shopping';
+  if (/uber|cabify|renfe|movil|transporte|gasolin|repsol|bp|cepsa|auto/i.test(str)) return 'Movilidad';
+  if (/brunch|desayun|cafe|starbucks|panaderia/i.test(str)) return 'Brunch & Desayunos';
+  if (/cena|copa|restaurante|bar|mcdonald/i.test(str)) return 'Cenas & Copas';
+  if (/fiesta|evento|pub|disco/i.test(str)) return 'Fiesta & Eventos';
+  if (/escapad|viaje|vuelo|hotel/i.test(str)) return 'Escapadas';
+  if (/care|salud|belleza|pelu/i.test(str)) return 'Self Care';
+
+  return 'Varios';
+}
+
 export default async function handler(req, res) {
-  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -22,7 +51,6 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  // Parseo flexible del body
   let body = req.body;
   if (typeof body === 'string') {
     try {
@@ -40,23 +68,27 @@ export default async function handler(req, res) {
 
   try {
     const supabase = getSupabaseClient();
-    const gasto = await analizarGastoConGemini(texto);
+    const gastoRaw = await analizarGastoConGemini(texto);
 
-    if (!gasto || !gasto.monto || isNaN(gasto.monto) || gasto.monto <= 0) {
+    if (!gastoRaw || !gastoRaw.monto || isNaN(gastoRaw.monto) || gastoRaw.monto <= 0) {
       return res.status(400).json({
         error: 'No se pudo detectar un importe/monto válido en el texto provisto.',
         textoProcesado: texto
       });
     }
 
+    // Normalización estricta antes de guardar en Postgres
+    const categoriaFinal = normalizarCategoria(gastoRaw.categoria);
+    const emojiFinal = CATEGORIAS_VALIDAS[categoriaFinal] || '✨';
+
     const { data, error } = await supabase
       .from('gastos')
       .insert([
         {
-          comercio: gasto.comercio || 'Compra Detectada',
-          monto: parseFloat(gasto.monto),
-          categoria: gasto.categoria || 'Varios',
-          emoji: gasto.emoji || '✨',
+          comercio: gastoRaw.comercio || 'Compra Detectada',
+          monto: parseFloat(gastoRaw.monto),
+          categoria: categoriaFinal,
+          emoji: emojiFinal,
           fecha: new Date().toISOString()
         }
       ])
@@ -67,7 +99,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      mensaje: `${gasto.emoji} ${gasto.comercio}: -${gasto.monto.toFixed(2)}€ (${gasto.categoria})`,
+      mensaje: `${emojiFinal} ${data.comercio}: -${data.monto.toFixed(2)}€ (${categoriaFinal})`,
       gasto: data
     });
 
@@ -77,7 +109,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Extracción mediante Expresión Regular (Fallback confiable)
 function extraerGastoPorRegex(texto) {
   const matchMonto = texto.match(/(\d+[\.,]?\d*)\s*(?:€|EUR|euros)/i) || 
                      texto.match(/(?:pago|compra|importe) (?:de )?(\d+[\.,]?\d*)/i);
@@ -90,30 +121,40 @@ function extraerGastoPorRegex(texto) {
     comercio = matchComercio[1].trim();
   }
 
-  return { comercio, monto, categoria: 'Varios', emoji: '✨' };
+  const categoria = normalizarCategoria(texto);
+
+  return { 
+    comercio: comercio.toLowerCase().includes('compra') && texto.toLowerCase().includes('mercadona') ? 'Mercadona' : comercio, 
+    monto, 
+    categoria, 
+    emoji: CATEGORIAS_VALIDAS[categoria] 
+  };
 }
 
 async function analizarGastoConGemini(texto) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  let apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    apiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+  }
 
   if (!apiKey) {
     return extraerGastoPorRegex(texto);
   }
 
+  // Se requiere v1beta para la validación estricta del Schema JSON
   const model = 'gemini-1.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const promptText = `Extrae la información del gasto bancario del siguiente texto:
+"${texto}"`;
 
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `Extrae la información del gasto bancario del siguiente texto:\n"${texto}"` }]
-          }
-        ],
+        contents: [{ role: 'user', parts: [{ text: promptText }] }],
         generationConfig: {
           response_mime_type: 'application/json',
           response_schema: {
@@ -123,17 +164,7 @@ async function analizarGastoConGemini(texto) {
               monto: { type: 'NUMBER' },
               categoria: { 
                 type: 'STRING', 
-                enum: [
-                  'Shopping', 
-                  'Self Care', 
-                  'Brunch & Desayunos', 
-                  'Cenas & Copas', 
-                  'Fiesta & Eventos', 
-                  'Supermercado', 
-                  'Escapadas', 
-                  'Movilidad', 
-                  'Varios'
-                ] 
+                enum: ['Shopping', 'Self Care', 'Brunch & Desayunos', 'Cenas & Copas', 'Fiesta & Eventos', 'Supermercado', 'Escapadas', 'Movilidad', 'Varios'] 
               },
               emoji: { type: 'STRING' }
             },
@@ -143,14 +174,15 @@ async function analizarGastoConGemini(texto) {
       })
     });
 
-    const data = await response.json();
-
-    if (!response.ok || data.error || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      console.warn(`Respuesta no válida de Gemini API (${response.status}), activando fallback Regex.`, data.error);
+    if (!response.ok) {
+      console.warn(`Gemini API respondió con HTTP ${response.status}. Usando fallback Regex.`);
       return extraerGastoPorRegex(texto);
     }
 
-    return JSON.parse(data.candidates[0].content.parts[0].text);
+    const data = await response.json();
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    return resultText ? JSON.parse(resultText) : extraerGastoPorRegex(texto);
 
   } catch (err) {
     console.warn('Excepción invocando Gemini API, usando fallback Regex:', err);
