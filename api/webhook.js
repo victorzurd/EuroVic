@@ -77,7 +77,17 @@ async function analizarGastoConGemini(texto) {
                 monto: { type: 'NUMBER' },
                 categoria: { 
                   type: 'STRING', 
-                  enum: ['Shopping', 'Self Care', 'Brunch', 'Fiesta', 'Movilidad', 'Varios'] 
+                  enum: [
+                    'Shopping',
+                    'Self Care',
+                    'Brunch & Desayunos',
+                    'Cenas & Copas',
+                    'Fiesta & Eventos',
+                    'Supermercado',
+                    'Escapadas',
+                    'Movilidad',
+                    'Varios'
+                  ] 
                 },
                 emoji: { type: 'STRING' }
               },

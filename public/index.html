@@ -1,723 +1,274 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-[#FAF5F0]">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Eurovic ✨ | Expense Tracker</title>
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Eurovic">
-  <link rel="apple-touch-icon" href="https://placehold.co/180x180/FBCFE8/831843?text=Eurovic✨">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EuroVic — Control de Gastos</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          },
-          colors: {
-            cream: '#FAF5F0',
-            blush: {
-              50: '#FFF5F7',
-              100: '#FDE8ED',
-              200: '#FBCFE8',
-              300: '#F4A8C4',
-              400: '#E879A8',
-              500: '#DB4D88',
-              800: '#831843',
-              900: '#500724',
-              950: '#300213',
-            },
-            gold: {
-              300: '#FDE047',
-              400: '#FACC15',
-              500: '#EAB308',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    ::-webkit-scrollbar { display: none; }
-    * { 
-      -ms-overflow-style: none; 
-      scrollbar-width: none; 
-      -webkit-tap-highlight-color: transparent; 
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0d0f17;
+      color: #f3f4f6;
     }
-    
     .glass-card {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(251, 207, 232, 0.45);
-    }
-
-    .active-tab {
-      background: #FFFFFF;
-      color: #300213;
-      box-shadow: 0 4px 14px rgba(232, 121, 168, 0.2);
-    }
-
-    @keyframes toastSlide {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .animate-toast-in {
-      animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      background: rgba(22, 27, 38, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
   </style>
 </head>
+<body class="min-h-screen pb-12">
+  <div class="max-w-md mx-auto px-4 pt-6">
 
-<body class="h-full bg-[#FAF5F0] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
-
-  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm pointer-events-none flex flex-col gap-2"></div>
-
-  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-24 relative shadow-2xl bg-[#FAF5F0]">
-
-    <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#FAF5F0]/90 backdrop-blur-md z-30 border-b border-blush-100/50">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
       <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-extrabold tracking-tight text-blush-950">Eurovic</h1>
-          <span class="inline-block w-2.5 h-2.5 rounded-full bg-gold-400 animate-pulse shadow-sm"></span>
-        </div>
-        <p class="text-[10px] font-bold text-blush-400 tracking-wider uppercase">Clean girl expenses ✨</p>
+        <h1 class="text-2xl font-extrabold tracking-tight text-white">EuroVic <span class="text-emerald-400">✨</span></h1>
+        <p class="text-xs text-gray-400 mt-0.5">Control inteligente de tus gastos</p>
+      </div>
+      <button onclick="cargarGastos()" class="p-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-300 hover:text-white transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      </button>
+    </div>
+
+    <!-- Alert / Toast -->
+    <div id="statusToast" class="hidden mb-4 p-3 rounded-xl text-sm font-medium border text-center"></div>
+
+    <!-- Card Resumen Mensual -->
+    <div class="glass-card rounded-2xl p-5 mb-6 shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Resumen mensual</span>
+        <input type="month" id="monthFilter" onchange="cargarGastos()" class="bg-gray-800 text-xs font-medium text-white px-3 py-1.5 rounded-lg border border-gray-700 focus:outline-none focus:border-emerald-500">
       </div>
 
-      <div class="flex items-center gap-2">
-        <select id="month-filter" onchange="cambiarMes(this.value)" class="bg-white/90 border border-blush-200 text-blush-950 text-xs font-bold py-2 px-3 rounded-full shadow-sm outline-none cursor-pointer focus:ring-2 focus:ring-blush-300 transition-all">
-        </select>
-        <button onclick="abrirModalNuevoGasto()" class="w-9 h-9 rounded-full bg-gradient-to-r from-blush-400 to-blush-500 text-white flex items-center justify-center font-bold shadow-md hover:opacity-90 active:scale-95 transition-all text-xl">
-          +
-        </button>
+      <div class="flex items-baseline space-x-2">
+        <span id="totalMonto" class="text-4xl font-extrabold text-white">0,00 €</span>
       </div>
-    </header>
-
-    <main class="px-5 space-y-6 flex-1 pt-3">
-
-      <section id="view-gastos" class="space-y-5">
-
-        <div class="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-blush-200 via-blush-100 to-amber-50 border border-blush-200/60 shadow-lg shadow-blush-200/30">
-          <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/40 blur-2xl pointer-events-none"></div>
-
-          <div class="flex justify-between items-start mb-1">
-            <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Total Gastado Este Mes</span>
-            <span id="badge-comparativa" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/80 text-blush-900 border border-blush-200 shadow-xs">
-              Cargando...
-            </span>
-          </div>
-
-          <div id="total-gastado" class="text-4xl font-black text-blush-950 tracking-tight my-2">
-            0,00 €
-          </div>
-
-          <div class="flex justify-between items-center text-xs text-blush-800 font-semibold pt-2 border-t border-blush-200/60">
-            <span id="txt-resumen-compras">0 compras registradas</span>
-            <span class="text-[11px] text-blush-400 font-medium">🐘 Vercel Postgres</span>
-          </div>
+      
+      <div class="mt-4 pt-4 border-t border-gray-800 flex justify-between text-xs text-gray-400">
+        <div>
+          <span>Transacciones:</span>
+          <span id="totalCount" class="font-semibold text-gray-200 ml-1">0</span>
         </div>
-
-        <div class="space-y-3">
-          <div class="flex gap-2">
-            <input type="text" id="search-input" oninput="filtrarTransacciones()" placeholder="🔍 Buscar (Zara, Sephora, Starbucks...)" class="w-full bg-white border border-blush-200 text-xs text-blush-950 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blush-300 placeholder:text-blush-300 shadow-sm">
-          </div>
-
-          <div class="flex gap-2 overflow-x-auto pb-1 text-xs no-scrollbar" id="category-filter-bar">
-          </div>
-        </div>
-
-        <div class="flex justify-between items-center px-1">
-          <span id="count-transacciones" class="text-xs font-bold text-blush-400 uppercase tracking-wider">0 movimientos</span>
-          <button onclick="pedirConfirmacionBorrarMes()" class="text-[11px] font-bold text-rose-400 hover:text-rose-600 transition-colors">Limpiar este mes</button>
-        </div>
-
-        <div id="full-expenses-list" class="space-y-2.5">
-        </div>
-
-      </section>
-
-      <section id="view-analytics" class="space-y-5 hidden">
-        
-        <h2 class="text-xs font-extrabold uppercase tracking-wider text-blush-400 px-1">Resumen Visual del Mes</h2>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div class="glass-card p-4 rounded-3xl space-y-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-blush-400">Mayor Capricho</span>
-            <div id="stat-mayor-capricho" class="text-lg font-black text-blush-950 truncate">-- €</div>
-            <p id="stat-mayor-capricho-sub" class="text-[10px] font-medium text-blush-400 truncate">Sin datos</p>
-          </div>
-
-          <div class="glass-card p-4 rounded-3xl space-y-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-blush-400">Categoría Top</span>
-            <div id="stat-categoria-top" class="text-lg font-black text-blush-950 truncate">--</div>
-            <p id="stat-categoria-top-sub" class="text-[10px] font-medium text-blush-400 truncate">Sin gastos</p>
-          </div>
-
-          <div class="glass-card p-4 rounded-3xl space-y-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-blush-400">Ticket Medio</span>
-            <div id="stat-ticket-medio" class="text-lg font-black text-blush-950 truncate">-- €</div>
-            <p class="text-[10px] font-medium text-blush-400">Por compra</p>
-          </div>
-
-          <div class="glass-card p-4 rounded-3xl space-y-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-blush-400">Nº Compras</span>
-            <div id="stat-num-compras" class="text-lg font-black text-blush-950 truncate">0</div>
-            <p class="text-[10px] font-medium text-blush-400">Movimientos</p>
-          </div>
-        </div>
-
-        <div class="glass-card p-5 rounded-3xl space-y-3">
-          <div class="flex justify-between items-center">
-            <h3 class="text-xs font-extrabold uppercase tracking-wider text-blush-400">Proporción por Categoría</h3>
-            <span id="stat-total-analytics" class="text-xs font-bold text-blush-950">0,00 €</span>
-          </div>
-
-          <div id="stacked-category-bar" class="w-full h-3 rounded-full bg-blush-100 overflow-hidden flex gap-0.5 p-0.5 border border-blush-200"></div>
-        </div>
-
-        <div class="glass-card p-5 rounded-3xl space-y-4">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-blush-400">Desglose Detallado</h3>
-          <div id="category-breakdown-list" class="space-y-3"></div>
-        </div>
-
-      </section>
-
-      <section id="view-sync" class="space-y-5 hidden">
-        
-        <div class="glass-card p-4 rounded-3xl flex items-center justify-between border-blush-200 bg-white/90">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🐘</div>
-            <div>
-              <p class="text-xs font-extrabold text-blush-950">Vercel Postgres Conectado</p>
-              <p class="text-[10px] text-blush-400 font-medium">Sincronización directa mediante SQL</p>
-            </div>
-          </div>
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-        </div>
-
-        <div class="glass-card p-5 rounded-3xl space-y-3 bg-gradient-to-br from-white via-pink-50/30 to-amber-50/20 border-blush-200">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">⚡</span>
-            <div>
-              <h2 class="text-sm font-extrabold text-blush-950">Probar Notificación Bancaria</h2>
-              <p class="text-[11px] font-medium text-blush-400">Analiza texto e inserta directamente en Postgres</p>
-            </div>
-          </div>
-
-          <div class="space-y-2 pt-1">
-            <textarea id="sim-input" rows="2" placeholder="Ej: Pago de 24,90 € con tarjeta en SEPHORA MADRID" class="w-full bg-white border border-blush-200 rounded-2xl p-3 text-xs text-blush-950 outline-none focus:ring-2 focus:ring-blush-300 resize-none shadow-xs"></textarea>
-            
-            <div class="flex gap-1.5 flex-wrap">
-              <button onclick="setEjemploSim('Pago de 45,90 € en ZARA')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">🛍️ Zara 45,90€</button>
-              <button onclick="setEjemploSim('Pago de 5,80 € con tarjeta en STARBUCKS')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">☕ Starbucks 5,80€</button>
-              <button onclick="setEjemploSim('Compra de 89,00 EUR en SEPHORA')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">💅 Sephora 89,00€</button>
-            </div>
-
-            <button onclick="ejecutarSimulacion()" class="w-full py-2.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-sm hover:opacity-95 transition-all text-xs flex items-center justify-center gap-1.5 mt-2">
-              <span>🚀</span> Analizar y Guardar
-            </button>
-          </div>
-        </div>
-
-      </section>
-
-    </main>
-
-    <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md bg-white/90 backdrop-blur-xl border border-blush-200/70 shadow-xl shadow-blush-900/10 rounded-full p-1.5 flex justify-around items-center z-40">
-      <button onclick="cambiarTab('gastos')" id="nav-gastos" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 active-tab transition-all">
-        <span class="text-base">🛍️</span>
-        <span>Gastos</span>
-      </button>
-      <button onclick="cambiarTab('analytics')" id="nav-analytics" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
-        <span class="text-base">📊</span>
-        <span>Stats</span>
-      </button>
-      <button onclick="cambiarTab('sync')" id="nav-sync" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
-        <span class="text-base">⚡</span>
-        <span>Estado</span>
-      </button>
-    </nav>
-
-    <div id="modal-nuevo" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm border border-blush-100 shadow-2xl space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-extrabold text-blush-950">Añadir Compra Manual ✨</h3>
-          <button onclick="cerrarModalNuevoGasto()" class="text-blush-400 hover:text-blush-950 text-2xl font-bold p-1">&times;</button>
-        </div>
-
-        <form onsubmit="guardarGastoManual(event)" class="space-y-3">
-          <div>
-            <label class="block text-[10px] font-bold text-blush-400 uppercase tracking-wider mb-1">Comercio / Tienda</label>
-            <input type="text" id="manual-comercio" required placeholder="Ej: Zara, Sephora, Starbucks" class="w-full bg-blush-50 border border-blush-200 rounded-xl p-3 text-xs text-blush-950 outline-none focus:ring-2 focus:ring-blush-300 font-semibold">
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-blush-400 uppercase tracking-wider mb-1">Importe (€)</label>
-            <input type="number" step="0.01" id="manual-monto" required placeholder="0.00" class="w-full bg-blush-50 border border-blush-200 rounded-xl p-3 text-xs text-blush-950 outline-none focus:ring-2 focus:ring-blush-300 font-semibold">
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-blush-400 uppercase tracking-wider mb-1">Categoría</label>
-            <select id="manual-categoria" class="w-full bg-blush-50 border border-blush-200 rounded-xl p-3 text-xs text-blush-950 outline-none focus:ring-2 focus:ring-blush-300 font-bold">
-              <option value="Shopping">🛍️ Shopping</option>
-              <option value="Self Care">💅 Self Care</option>
-              <option value="Brunch">☕ Brunch & Coffee</option>
-              <option value="Fiesta">🥂 Fiesta</option>
-              <option value="Movilidad">🚕 Movilidad</option>
-              <option value="Varios">✨ Varios</option>
-            </select>
-          </div>
-
-          <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-md hover:opacity-95 transition-all text-xs pt-3 mt-2">
-            Guardar en Postgres 🐘
-          </button>
-        </form>
+        <button onclick="borrarMesCompleto()" class="text-red-400 hover:text-red-300 transition font-medium">Borrar este mes</button>
       </div>
     </div>
 
-    <div id="modal-confirm" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-xs border border-blush-100 shadow-2xl text-center space-y-4">
-        <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center text-xl mx-auto">🗑️</div>
-        <h3 id="modal-confirm-title" class="text-sm font-extrabold text-blush-950">¿Eliminar estos gastos?</h3>
-        <p id="modal-confirm-msg" class="text-xs text-blush-400">Esta acción borrará el registro de la base de datos Postgres.</p>
-        <div class="flex gap-2 pt-1">
-          <button onclick="cerrarModalConfirm()" class="flex-1 py-2.5 rounded-xl border border-blush-200 text-xs font-bold text-blush-500 hover:bg-blush-50">Cancelar</button>
-          <button id="btn-confirm-action" class="flex-1 py-2.5 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 shadow-sm">Borrar</button>
+    <!-- Formulario Gasto Manual -->
+    <div class="glass-card rounded-2xl p-5 mb-6 shadow-xl">
+      <h2 class="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+        <span>➕</span> Añadir Gasto Manual
+      </h2>
+      <form id="gastoForm" onsubmit="guardarGastoManual(event)" class="space-y-3">
+        <div class="grid grid-cols-3 gap-2">
+          <input type="text" id="comercio" placeholder="Comercio (ej. Zara)" required class="col-span-2 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+          <input type="number" step="0.01" id="monto" placeholder="0.00 €" required class="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
         </div>
-      </div>
+        <div class="grid grid-cols-3 gap-2">
+          <select id="categoria" class="col-span-2 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <option value="Shopping">🛍️ Shopping</option>
+            <option value="Self Care">💅 Self Care</option>
+            <option value="Brunch & Desayunos">🥐 Brunch & Desayunos</option>
+            <option value="Cenas & Copas">🍷 Cenas & Copas</option>
+            <option value="Fiesta & Eventos">🎉 Fiesta & Eventos</option>
+            <option value="Supermercado">🛒 Supermercado</option>
+            <option value="Escapadas">✈️ Escapadas</option>
+            <option value="Movilidad">🚗 Movilidad</option>
+            <option value="Varios" selected>✨ Varios</option>
+          </select>
+          <input type="text" id="emoji" placeholder="Emoji" value="✨" class="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-center text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold py-2.5 rounded-xl transition text-sm">
+          Guardar Gasto
+        </button>
+      </form>
+    </div>
+
+    <!-- Lista de Gastos -->
+    <div>
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">Historial de Transacciones</h2>
+      <div id="listaGastos" class="space-y-2.5"></div>
     </div>
 
   </div>
 
   <script>
-    const CATEGORIAS_CONFIG = {
-      'Shopping': { emoji: '🛍️', bg: 'bg-pink-100', text: 'text-pink-800', color: '#E879A8' },
-      'Self Care': { emoji: '💅', bg: 'bg-purple-100', text: 'text-purple-800', color: '#A855F7' },
-      'Brunch': { emoji: '☕', bg: 'bg-amber-100', text: 'text-amber-800', color: '#F59E0B' },
-      'Fiesta': { emoji: '🥂', bg: 'bg-rose-100', text: 'text-rose-800', color: '#F43F5E' },
-      'Movilidad': { emoji: '🚕', bg: 'bg-blue-100', text: 'text-blue-800', color: '#3B82F6' },
-      'Varios': { emoji: '✨', bg: 'bg-emerald-100', text: 'text-emerald-800', color: '#10B981' }
-    };
-
     let todosLosGastos = [];
-    let mesSeleccionado = '';
-    let categoriaFiltroSeleccionada = 'Todas';
 
-    async function cargarGastosDesdeServidor() {
-      try {
-        const res = await fetch('/api/gastos');
-        if (res.ok) {
-          const data = await res.json();
-          todosLosGastos = data.map(g => ({
-            ...g,
-            monto: parseFloat(g.monto) || 0
-          }));
-        }
-      } catch (err) {
-        console.error('Error cargando gastos:', err);
-      }
-    }
+    const hoy = new Date();
+    const mesActualStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('monthFilter').value = mesActualStr;
 
-    function formatearFecha(fechaStr) {
-      const d = new Date(fechaStr);
-      if (isNaN(d.getTime())) return fechaStr;
-      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-    }
-
-    function obtenerClaveMes(fechaStr) {
-      const d = new Date(fechaStr);
-      if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 7);
-      return d.toISOString().slice(0, 7);
-    }
-
-    function obtenerNombreMesLegible(claveYYYYMM) {
-      if (!claveYYYYMM) return 'Mes Actual';
-      const [year, month] = claveYYYYMM.split('-');
-      const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
-      return `${nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1)} ${year}`;
-    }
-
-    window.onload = async function() {
-      await cargarGastosDesdeServidor();
-      await procesarParametrosURL();
-      poblarFiltroMeses();
-      renderizarTodo();
-    };
-
-    async function solicitarAnalisisServerless(textoNotificacion) {
-      try {
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: textoNotificacion })
-        });
-
-        if (!response.ok) throw new Error('Error en el servidor');
-
-        const parsed = await response.json();
-        const catFinal = CATEGORIAS_CONFIG[parsed.categoria] ? parsed.categoria : 'Varios';
-
-        return {
-          comercio: parsed.comercio || 'Pago con Tarjeta',
-          monto: parseFloat(parsed.monto) || 0,
-          categoria: catFinal,
-          emoji: parsed.emoji || CATEGORIAS_CONFIG[catFinal].emoji,
-          fecha: new Date().toISOString()
-        };
-      } catch (err) {
-        mostrarToast('Error analizando texto', '⚠️');
-        return null;
-      }
-    }
-
-    async function procesarParametrosURL() {
+    window.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const notiParam = urlParams.get('notificacion');
+      const notificacionText = urlParams.get('notificacion');
 
-      if (notiParam) {
-        mostrarToast('Analizando compra... ✨', '🤖');
-        const gastoCreado = await solicitarAnalisisServerless(decodeURIComponent(notiParam));
-
-        if (gastoCreado && gastoCreado.monto > 0) {
-          await fetch('/api/gastos', {
+      if (notificacionText) {
+        mostrarToast('Procesando gasto con IA...', 'info');
+        try {
+          const res = await fetch('/api/webhook', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(gastoCreado)
+            body: JSON.stringify({ text: notificacionText })
           });
-
-          await cargarGastosDesdeServidor();
-          mostrarToast(`Añadido: ${gastoCreado.comercio} (${gastoCreado.monto.toFixed(2)}€)`, gastoCreado.emoji);
-          window.history.replaceState({}, document.title, window.location.pathname);
+          const data = await res.json();
+          if (res.ok) {
+            mostrarToast(data.mensaje || 'Gasto registrado correctamente', 'success');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            mostrarToast(data.error || 'Error procesando notificación', 'error');
+          }
+        } catch (e) {
+          mostrarToast('Error al conectar con el servidor', 'error');
         }
       }
-    }
 
-    async function ejecutarSimulacion() {
-      const txt = document.getElementById('sim-input').value;
-      if (!txt.trim()) return;
+      await cargarGastos();
+    });
 
-      mostrarToast('Analizando gasto... ✨', '🤖');
-      const gasto = await solicitarAnalisisServerless(txt);
-
-      if (gasto && gasto.monto > 0) {
-        await fetch('/api/gastos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(gasto)
-        });
-
-        await cargarGastosDesdeServidor();
-        poblarFiltroMeses();
-        renderizarTodo();
-
-        mostrarToast(`¡Guardado! ${gasto.comercio} (-${gasto.monto.toFixed(2)}€)`, gasto.emoji);
-        document.getElementById('sim-input').value = '';
-        cambiarTab('gastos');
+    async function cargarGastos() {
+      try {
+        const res = await fetch('/api/gastos');
+        if (!res.ok) throw new Error('Error al obtener gastos');
+        todosLosGastos = await res.json();
+        renderizar();
+      } catch (e) {
+        mostrarToast('No se pudieron cargar los gastos', 'error');
       }
     }
 
-    function poblarFiltroMeses() {
-      const mesesSet = new Set();
-      const mesActualKey = new Date().toISOString().slice(0, 7);
-      mesesSet.add(mesActualKey);
+    function renderizar() {
+      const mesSeleccionado = document.getElementById('monthFilter').value;
+      const listaEl = document.getElementById('listaGastos');
+      listaEl.innerHTML = '';
 
-      todosLosGastos.forEach(g => mesesSet.add(obtenerClaveMes(g.fecha)));
-
-      const mesesOrdenados = Array.from(mesesSet).sort().reverse();
-      const selectHTML = mesesOrdenados.map(m => `
-        <option value="${m}">${obtenerNombreMesLegible(m)}</option>
-      `).join('');
-
-      document.getElementById('month-filter').innerHTML = selectHTML;
-      mesSeleccionado = mesesOrdenados[0];
-    }
-
-    function cambiarMes(nuevoMes) {
-      mesSeleccionado = nuevoMes;
-      renderizarTodo();
-    }
-
-    function renderizarTodo() {
-      const gastosDelMes = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
-      const totalMes = gastosDelMes.reduce((acc, g) => acc + g.monto, 0);
-
-      document.getElementById('total-gastado').innerText = totalMes.toFixed(2).replace('.', ',') + ' €';
-      document.getElementById('txt-resumen-compras').innerText = `${gastosDelMes.length} compras registradas`;
-
-      renderizarComparativaMesAnterior(totalMes);
-      renderizarListaTransacciones(gastosDelMes);
-      renderizarEstadisticas(gastosDelMes);
-    }
-
-    function renderizarComparativaMesAnterior(totalActual) {
-      const [year, month] = mesSeleccionado.split('-').map(Number);
-      const fechaPrevio = new Date(year, month - 2, 1);
-      const clavePrevio = fechaPrevio.toISOString().slice(0, 7);
-
-      const gastosPrevios = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === clavePrevio);
-      const totalPrevio = gastosPrevios.reduce((acc, g) => acc + g.monto, 0);
-
-      const badge = document.getElementById('badge-comparativa');
-      if (totalPrevio === 0) {
-        badge.innerText = 'Sin historial previo';
-      } else {
-        const diff = ((totalActual - totalPrevio) / totalPrevio) * 100;
-        const signo = diff > 0 ? '+' : '';
-        badge.innerText = `${signo}${diff.toFixed(0)}% vs mes pasado`;
-      }
-    }
-
-    function renderizarListaTransacciones(gastosMes) {
-      const container = document.getElementById('full-expenses-list');
-      const searchVal = document.getElementById('search-input').value.toLowerCase();
-      
-      let filtrados = gastosMes.filter(g => {
-        const coincideNombre = g.comercio.toLowerCase().includes(searchVal);
-        const coincideCat = (categoriaFiltroSeleccionada === 'Todas' || g.categoria === categoriaFiltroSeleccionada);
-        return coincideNombre && coincideCat;
+      const filtrados = todosLosGastos.filter(g => {
+        if (!g.fecha) return false;
+        const f = new Date(g.fecha);
+        const yyyymm = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`;
+        return yyyymm === mesSeleccionado;
       });
 
-      document.getElementById('count-transacciones').innerText = `${filtrados.length} movimientos`;
+      let total = 0;
+      filtrados.forEach(g => { total += parseFloat(g.monto || 0); });
 
-      const categories = ['Todas', ...Object.keys(CATEGORIAS_CONFIG)];
-      document.getElementById('category-filter-bar').innerHTML = categories.map(cat => `
-        <button onclick="filtrarPorCategoria('${cat}')" class="px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${categoriaFiltroSeleccionada === cat ? 'bg-blush-500 text-white shadow-sm' : 'bg-white text-blush-400 border border-blush-100'}">
-          ${cat}
-        </button>
-      `).join('');
+      document.getElementById('totalMonto').innerText = total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+      document.getElementById('totalCount').innerText = filtrados.length;
 
       if (filtrados.length === 0) {
-        container.innerHTML = '<div class="text-center py-10 text-xs text-blush-300 font-semibold">No hay compras registradas ✨</div>';
-        return;
-      }
-
-      container.innerHTML = filtrados.map(g => crearHTMLGastoItem(g)).join('');
-    }
-
-    function crearHTMLGastoItem(g) {
-      const conf = CATEGORIAS_CONFIG[g.categoria] || CATEGORIAS_CONFIG['Varios'];
-      return `
-        <div class="bg-white p-3.5 rounded-2xl border border-blush-100/80 shadow-xs flex justify-between items-center transition-all hover:border-blush-300">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl ${conf.bg} flex items-center justify-center text-xl shrink-0">
-              ${g.emoji || conf.emoji}
-            </div>
-            <div>
-              <p class="font-extrabold text-xs text-blush-950">${g.comercio}</p>
-              <div class="flex items-center gap-2 mt-0.5">
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${conf.bg} ${conf.text}">${g.categoria}</span>
-                <span class="text-[10px] text-blush-300 font-medium">${formatearFecha(g.fecha)}</span>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="font-black text-xs text-blush-950">-${g.monto.toFixed(2).replace('.', ',')} €</span>
-            <button onclick="pedirConfirmacionBorrarUno(${g.id})" class="text-rose-300 hover:text-rose-500 text-xs p-1">
-              🗑️
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderizarEstadisticas(gastosMes) {
-      const totalMes = gastosMes.reduce((acc, g) => acc + g.monto, 0);
-      document.getElementById('stat-total-analytics').innerText = totalMes.toFixed(2).replace('.', ',') + ' €';
-
-      if (gastosMes.length === 0) {
-        document.getElementById('stat-mayor-capricho').innerText = '-- €';
-        document.getElementById('stat-mayor-capricho-sub').innerText = 'Sin compras';
-        document.getElementById('stat-categoria-top').innerText = '--';
-        document.getElementById('stat-categoria-top-sub').innerText = 'Sin datos';
-        document.getElementById('stat-ticket-medio').innerText = '0,00 €';
-        document.getElementById('stat-num-compras').innerText = '0';
-        document.getElementById('stacked-category-bar').innerHTML = '<div class="w-full h-full bg-blush-100 rounded-full"></div>';
-        document.getElementById('category-breakdown-list').innerHTML = '<p class="text-xs text-blush-300 text-center py-4">Sin compras registradas ✨</p>';
-        return;
-      }
-
-      const mayor = [...gastosMes].sort((a,b) => b.monto - a.monto)[0];
-      document.getElementById('stat-mayor-capricho').innerText = `${mayor.monto.toFixed(2)} €`;
-      document.getElementById('stat-mayor-capricho-sub').innerText = `${mayor.emoji || '🛍️'} ${mayor.comercio}`;
-
-      const totalsByCat = {};
-      gastosMes.forEach(g => {
-        totalsByCat[g.categoria] = (totalsByCat[g.categoria] || 0) + g.monto;
-      });
-      let topCat = Object.keys(totalsByCat).sort((a,b) => totalsByCat[b] - totalsByCat[a])[0];
-      document.getElementById('stat-categoria-top').innerText = `${CATEGORIAS_CONFIG[topCat]?.emoji || '✨'} ${topCat}`;
-      document.getElementById('stat-categoria-top-sub').innerText = `${totalsByCat[topCat].toFixed(2)} € gastados`;
-
-      const ticketMedio = totalMes / gastosMes.length;
-      document.getElementById('stat-ticket-medio').innerText = `${ticketMedio.toFixed(2)} €`;
-      document.getElementById('stat-num-compras').innerText = gastosMes.length;
-
-      let stackedBarHTML = '';
-      let breakdownHTML = '';
-
-      Object.keys(CATEGORIAS_CONFIG).forEach(cat => {
-        const conf = CATEGORIAS_CONFIG[cat];
-        const montoCat = totalsByCat[cat] || 0;
-        const pct = totalMes > 0 ? (montoCat / totalMes) * 100 : 0;
-
-        if (pct > 0) {
-          stackedBarHTML += `<div style="width: ${pct}%; background-color: ${conf.color}" class="h-full first:rounded-l-full last:rounded-r-full" title="${cat}: ${pct.toFixed(1)}%"></div>`;
-        }
-
-        breakdownHTML += `
-          <div class="space-y-1">
-            <div class="flex justify-between items-center text-xs">
-              <div class="flex items-center gap-1.5 font-bold text-blush-950">
-                <span>${conf.emoji}</span>
-                <span>${cat}</span>
-              </div>
-              <div class="font-bold text-blush-950">
-                <span>${montoCat.toFixed(2).replace('.', ',')} €</span>
-                <span class="text-[10px] text-blush-400 font-normal">(${pct.toFixed(0)}%)</span>
-              </div>
-            </div>
-            <div class="w-full h-2 bg-blush-100 rounded-full overflow-hidden">
-              <div style="width: ${pct}%; background-color: ${conf.color}" class="h-full rounded-full transition-all duration-500"></div>
-            </div>
+        listaEl.innerHTML = `
+          <div class="glass-card rounded-2xl p-6 text-center text-gray-400 text-sm">
+            No hay gastos registrados para este mes. 🌴
           </div>
         `;
+        return;
+      }
+
+      filtrados.forEach(g => {
+        const dateObj = new Date(g.fecha);
+        const fechaFormat = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+        const card = document.createElement('div');
+        card.className = 'glass-card rounded-2xl p-3.5 flex justify-between items-center hover:bg-gray-800/50 transition';
+        card.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-xl border border-gray-700">
+              ${g.emoji || '✨'}
+            </div>
+            <div>
+              <div class="font-bold text-sm text-gray-100">${escapeHtml(g.comercio)}</div>
+              <div class="text-xs text-gray-400 space-x-1">
+                <span>${fechaFormat}</span>
+                <span>•</span>
+                <span class="text-emerald-400">${escapeHtml(g.categoria || 'Varios')}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="font-bold text-sm text-red-400">-${parseFloat(g.monto).toFixed(2)} €</span>
+            <button onclick="borrarGasto(${g.id})" class="text-gray-500 hover:text-red-400 transition p-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        `;
+        listaEl.appendChild(card);
       });
-
-      document.getElementById('stacked-category-bar').innerHTML = stackedBarHTML || '<div class="w-full h-full bg-blush-100 rounded-full"></div>';
-      document.getElementById('category-breakdown-list').innerHTML = breakdownHTML;
-    }
-
-    function filtrarPorCategoria(cat) {
-      categoriaFiltroSeleccionada = cat;
-      renderizarTodo();
-    }
-
-    function filtrarTransacciones() {
-      const gastosMes = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
-      renderizarListaTransacciones(gastosMes);
-    }
-
-    function setEjemploSim(texto) {
-      document.getElementById('sim-input').value = texto;
-    }
-
-    let accionBorradoPendiente = null;
-
-    function pedirConfirmacionBorrarUno(id) {
-      document.getElementById('modal-confirm-title').innerText = '¿Borrar esta compra?';
-      document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente de Postgres.';
-      accionBorradoPendiente = async () => {
-        await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
-        await cargarGastosDesdeServidor();
-        poblarFiltroMeses();
-        renderizarTodo();
-        mostrarToast('Compra eliminada', '🗑️');
-      };
-      document.getElementById('modal-confirm').classList.remove('hidden');
-    }
-
-    function pedirConfirmacionBorrarMes() {
-      document.getElementById('modal-confirm-title').innerText = `¿Limpiar ${obtenerNombreMesLegible(mesSeleccionado)}?`;
-      document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras de este mes en Postgres.';
-      accionBorradoPendiente = async () => {
-        await fetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
-        await cargarGastosDesdeServidor();
-        poblarFiltroMeses();
-        renderizarTodo();
-        mostrarToast('Mes limpiado', '✨');
-      };
-      document.getElementById('modal-confirm').classList.remove('hidden');
-    }
-
-    document.getElementById('btn-confirm-action').onclick = async function() {
-      if (accionBorradoPendiente) await accionBorradoPendiente();
-      cerrarModalConfirm();
-    };
-
-    function cerrarModalConfirm() {
-      document.getElementById('modal-confirm').classList.add('hidden');
-      accionBorradoPendiente = null;
-    }
-
-    function cambiarTab(tabName) {
-      document.getElementById('view-gastos').classList.add('hidden');
-      document.getElementById('view-analytics').classList.add('hidden');
-      document.getElementById('view-sync').classList.add('hidden');
-
-      document.getElementById('nav-gastos').className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all";
-      document.getElementById('nav-analytics').className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all";
-      document.getElementById('nav-sync').className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all";
-
-      document.getElementById(`view-${tabName}`).classList.remove('hidden');
-      document.getElementById(`nav-${tabName}`).className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 active-tab transition-all";
-    }
-
-    function abrirModalNuevoGasto() {
-      document.getElementById('modal-nuevo').classList.remove('hidden');
-    }
-
-    function cerrarModalNuevoGasto() {
-      document.getElementById('modal-nuevo').classList.add('hidden');
     }
 
     async function guardarGastoManual(e) {
       e.preventDefault();
-      const comercio = document.getElementById('manual-comercio').value;
-      const monto = parseFloat(document.getElementById('manual-monto').value);
-      const categoria = document.getElementById('manual-categoria').value;
+      const comercio = document.getElementById('comercio').value;
+      const monto = document.getElementById('monto').value;
+      const categoria = document.getElementById('categoria').value;
+      const emoji = document.getElementById('emoji').value;
 
-      const nuevoGasto = {
-        comercio,
-        monto,
-        categoria,
-        emoji: CATEGORIAS_CONFIG[categoria]?.emoji || '✨',
-        fecha: new Date().toISOString()
-      };
+      try {
+        const res = await fetch('/api/gastos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comercio, monto, categoria, emoji })
+        });
 
-      await fetch('/api/gastos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevoGasto)
-      });
-
-      cerrarModalNuevoGasto();
-      document.getElementById('manual-comercio').value = '';
-      document.getElementById('manual-monto').value = '';
-
-      await cargarGastosDesdeServidor();
-      poblarFiltroMeses();
-      renderizarTodo();
-      mostrarToast(`Añadido a Postgres: ${comercio}`, nuevoGasto.emoji);
+        if (res.ok) {
+          mostrarToast('Gasto añadido correctamente', 'success');
+          document.getElementById('gastoForm').reset();
+          document.getElementById('emoji').value = '✨';
+          await cargarGastos();
+        } else {
+          mostrarToast('Error al guardar el gasto', 'error');
+        }
+      } catch (err) {
+        mostrarToast('Error de conexión', 'error');
+      }
     }
 
-    function mostrarToast(mensaje, emoji = '✨') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = 'bg-blush-950/95 text-white px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-blush-400/40 flex items-center gap-3 transition-all transform translate-y-[-20px] opacity-0 animate-toast-in';
-      toast.innerHTML = `
-        <span class="text-lg">${emoji}</span>
-        <span class="text-xs font-bold tracking-wide">${mensaje}</span>
-      `;
-      container.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.classList.remove('opacity-0', 'translate-y-[-20px]');
-      }, 10);
+    async function borrarGasto(id) {
+      if (!confirm('¿Quieres eliminar esta transacción?')) return;
+      try {
+        const res = await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          mostrarToast('Transacción eliminada', 'success');
+          await cargarGastos();
+        }
+      } catch (e) {
+        mostrarToast('Error al eliminar', 'error');
+      }
+    }
 
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-[-20px]');
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
+    async function borrarMesCompleto() {
+      const mes = document.getElementById('monthFilter').value;
+      if (!confirm(`¿Estás seguro de BORRAR TODOS los gastos de ${mes}?`)) return;
+      try {
+        const res = await fetch(`/api/gastos?month=${mes}`, { method: 'DELETE' });
+        if (res.ok) {
+          mostrarToast(`Gastos de ${mes} eliminados`, 'success');
+          await cargarGastos();
+        }
+      } catch (e) {
+        mostrarToast('Error al eliminar mes', 'error');
+      }
+    }
+
+    function mostrarToast(msg, tipo) {
+      const toast = document.getElementById('statusToast');
+      toast.innerText = msg;
+      toast.className = `mb-4 p-3 rounded-xl text-sm font-medium border text-center transition ${
+        tipo === 'success' ? 'bg-emerald-950/80 border-emerald-700 text-emerald-200' :
+        tipo === 'error' ? 'bg-red-950/80 border-red-700 text-red-200' :
+        'bg-blue-950/80 border-blue-700 text-blue-200'
+      }`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[m]);
     }
   </script>
 </body>
