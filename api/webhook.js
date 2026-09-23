@@ -149,7 +149,7 @@ async function analizarGastoConGemini(texto) {
     throw new Error('Falta la variable de entorno GEMINI_API_KEY en Vercel.');
   }
 
-  const model = 'gemini-3.8-flash';
+  const model = 'gemini-3.5-flash-lite';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const promptText = `Extrae la información del gasto bancario del siguiente texto:
