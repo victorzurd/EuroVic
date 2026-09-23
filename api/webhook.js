@@ -68,7 +68,7 @@ export default async function handler(req, res) {
   try {
     const supabase = getSupabaseClient();
     
-    // Llamada a Gemini con fallback automático si falla la v3.8
+    // Llamada obligatoria a Gemini (si falla, saltará directo al catch)
     const gastoRaw = await analizarGastoConGemini(texto);
 
     if (!gastoRaw || !gastoRaw.monto || isNaN(gastoRaw.monto) || gastoRaw.monto <= 0) {
@@ -106,9 +106,37 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Error de IA en webhook.js:', error);
+    // Devuelve el error exacto de la API para que lo veas directamente en la web
     return res.status(500).json({ error: `[ERROR IA] ${error.message}` });
   }
 }
+
+/* 
+// =========================================================================
+// ⛔ PARTE REGEX / FALLBACK DESACTIVADA PARA PRUEBAS
+// =========================================================================
+function extraerGastoPorRegex(texto) {
+  const matchMonto = texto.match(/(\d+[\.,]?\d*)\s*(?:€|EUR|euros)/i) || 
+                     texto.match(/(?:pago|compra|importe) (?:de )?(\d+[\.,]?\d*)/i);
+  
+  const monto = matchMonto ? parseFloat(matchMonto[1].replace(',', '.')) : 0;
+
+  let comercio = 'Compra Detectada';
+  const matchComercio = texto.match(/(?:en|de)\s+([A-Za-z0-9\s]+?)(?:\s+\d+|\s*$)/i);
+  if (matchComercio && matchComercio[1]) {
+    comercio = matchComercio[1].trim();
+  }
+
+  const categoria = normalizarCategoria(texto);
+
+  return { 
+    comercio: comercio.toLowerCase().includes('compra') && texto.toLowerCase().includes('mercadona') ? 'Mercadona' : comercio, 
+    monto, 
+    categoria, 
+    emoji: CATEGORIAS_VALIDAS[categoria] 
+  };
+}
+*/
 
 async function analizarGastoConGemini(texto) {
   let apiKey = process.env.GEMINI_API_KEY;
@@ -121,22 +149,8 @@ async function analizarGastoConGemini(texto) {
     throw new Error('Falta la variable de entorno GEMINI_API_KEY en Vercel.');
   }
 
-  try {
-    // Intento primario con Gemini 3.8
-    return await ejecutarPeticionGemini(texto, 'gemini-3.8-flash', apiKey);
-  } catch (errorPrimario) {
-    console.warn(`[GEMINI FALLBACK] Error en gemini-3.8-flash: ${errorPrimario.message}. Reintentando con gemini-3.5-lite...`);
-    try {
-      // Fallback a Gemini 3.5 Lite
-      return await ejecutarPeticionGemini(texto, 'gemini-3.5-lite', apiKey);
-    } catch (errorFallback) {
-      throw new Error(`Gemini 3.8 falló (${errorPrimario.message}) y Gemini 3.5 Lite también falló (${errorFallback.message})`);
-    }
-  }
-}
-
-async function ejecutarPeticionGemini(texto, modelo, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
+  const model = 'gemini-3.8-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const promptText = `Extrae la información del gasto bancario del siguiente texto:
 "${texto}"`;
@@ -165,16 +179,17 @@ async function ejecutarPeticionGemini(texto, modelo, apiKey) {
     })
   });
 
+  // Si Google responde con 400, 403, 404, etc., lanzamos una excepción con el detalle del error
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`[HTTP ${response.status}] ${errorBody}`);
+    throw new Error(`Google Gemini API respondió HTTP ${response.status}: ${errorBody}`);
   }
 
   const data = await response.json();
   const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!resultText) {
-    throw new Error('Respuesta vacía o sin candidates.');
+    throw new Error('Gemini API devolvió una respuesta vacía o sin candidates.');
   }
 
   return JSON.parse(resultText);
