@@ -1,22 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 1. Inicialización y validación de variables de entorno
-const supabaseUrl = process.env.POSTGRES_SUPABASE_URL;
-const supabaseServiceKey = process.env.POSTGRES_SUPABASE_SERVICE_ROLE_KEY;
+function getSupabaseClient() {
+  const supabaseUrl = process.env.POSTGRES_SUPABASE_URL;
+  const supabaseServiceKey = process.env.POSTGRES_SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Error: Faltan las variables POSTGRES_SUPABASE_URL o POSTGRES_SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Faltan las variables POSTGRES_SUPABASE_URL o POSTGRES_SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
-  }
-});
-
 export default async function handler(req, res) {
-  // Configuración de CORS previa a cualquier retornos temprano
+  // 1. Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -24,38 +25,47 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  // Parsing seguro del cuerpo de la petición
+  // 2. Parseo flexible del body
   let body = req.body;
   if (typeof body === 'string') {
     try {
       body = JSON.parse(body);
     } catch (e) {
-      body = {};
+      // Si viene como string plano, asumimos que todo el string es el texto enviado
+      body = { text: req.body };
     }
   }
 
-  // Extracción unificada del texto enviado
-  const texto = body?.text || body?.notificacion || req.query?.text;
+  // Acepta text, notificacion, message o req.query.text
+  const texto = body?.text || body?.notificacion || body?.message || req.query?.text;
 
-  if (!texto) {
-    return res.status(400).json({ error: 'No se envió texto para analizar' });
+  if (!texto || typeof texto !== 'string' || texto.trim() === '') {
+    return res.status(400).json({ 
+      error: 'No se envió texto para analizar. Asegúrate de enviar un JSON con el campo "text" o "notificacion".',
+      receivedBody: req.body 
+    });
   }
 
   try {
+    const supabase = getSupabaseClient();
     const gasto = await analizarGastoConGemini(texto);
 
-    if (!gasto || !gasto.monto) {
-      return res.status(400).json({ error: 'No se pudo detectar un importe válido en el texto' });
+    if (!gasto || !gasto.monto || isNaN(gasto.monto) || gasto.monto <= 0) {
+      return res.status(400).json({ 
+        error: 'No se pudo detectar un importe/monto válido en el texto enviado.',
+        textoProcesado: texto,
+        resultadoGemini: gasto 
+      });
     }
 
     const { data, error } = await supabase
       .from('gastos')
       .insert([
         {
-          comercio: gasto.comercio,
+          comercio: gasto.comercio || 'Compra Detectada',
           monto: gasto.monto,
-          categoria: gasto.categoria,
-          emoji: gasto.emoji,
+          categoria: gasto.categoria || 'Varios',
+          emoji: gasto.emoji || '✨',
           fecha: new Date().toISOString()
         }
       ])
@@ -79,7 +89,9 @@ export default async function handler(req, res) {
 async function analizarGastoConGemini(texto) {
   const apiKey = process.env.GEMINI_API_KEY;
 
+  // Fallback si no hay API Key de Gemini configurada
   if (!apiKey) {
+    console.warn('GEMINI_API_KEY no encontrada. Usando extracción básica por Regex.');
     const match = texto.match(/(\d+[\.,]?\d*)\s*(?:€|EUR|euros)/i) || texto.match(/(?:pago|compra|importe) (?:de )?(\d+[\.,]?\d*)/i);
     const monto = match ? parseFloat(match[1].replace(',', '.')) : 0;
     return { comercio: 'Compra Detectada', monto, categoria: 'Varios', emoji: '✨' };
