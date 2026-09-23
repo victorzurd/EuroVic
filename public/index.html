@@ -333,6 +333,18 @@
       }
     }
 
+    // Actualización directa e instantánea en el cliente sin re-fetch masivo
+    function agregarGastoLocalmente(gasto) {
+      const gastoFormateado = {
+        ...gasto,
+        monto: parseFloat(gasto.monto) || 0,
+        fecha: gasto.fecha || new Date().toISOString()
+      };
+      todosLosGastos.unshift(gastoFormateado);
+      poblarFiltroMeses();
+      renderizarTodo();
+    }
+
     function formatearFecha(fechaStr) {
       const d = new Date(fechaStr);
       if (isNaN(d.getTime())) return fechaStr;
@@ -361,78 +373,61 @@
     };
 
     async function solicitarAnalisisServerless(textoNotificacion) {
-  // 1. Validación previa en el cliente
-  if (!textoNotificacion || typeof textoNotificacion !== 'string' || !textoNotificacion.trim()) {
-    mostrarToast('El texto a analizar está vacío', '⚠️');
-    return null;
-  }
+      if (!textoNotificacion || typeof textoNotificacion !== 'string' || !textoNotificacion.trim()) {
+        mostrarToast('El texto a analizar está vacío', '⚠️');
+        return null;
+      }
 
-  try {
-    const response = await fetch('/api/webhook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: textoNotificacion.trim() })
-    });
+      try {
+        const response = await fetch('/api/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textoNotificacion.trim() })
+        });
 
-    const parsed = await response.json();
+        const parsed = await response.json();
 
-    // 2. Si el servidor responde con 400 o 500, leemos el mensaje exacto
-    if (!response.ok) {
-      const mensajeError = parsed.error || 'No se pudo analizar el gasto';
-      console.warn('Respuesta de error del servidor (400):', parsed);
-      mostrarToast(mensajeError, '⚠️');
-      return null;
+        if (!response.ok) {
+          const mensajeError = parsed.error || 'No se pudo analizar el gasto';
+          console.warn('Respuesta de error del servidor:', parsed);
+          mostrarToast(mensajeError, '⚠️');
+          return null;
+        }
+
+        return parsed.gasto || parsed;
+      } catch (err) {
+        console.error('Error de red/servidor:', err);
+        mostrarToast('Error al conectar con la API', '⚠️');
+        return null;
+      }
     }
 
-    const gasto = parsed.gasto || parsed;
-    const catFinal = CATEGORIAS_CONFIG[gasto.categoria] ? gasto.categoria : 'Varios';
+    async function procesarParametrosURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const notiParam = urlParams.get('notificacion');
 
-    return {
-      comercio: gasto.comercio || 'Pago con Tarjeta',
-      monto: parseFloat(gasto.monto) || 0,
-      categoria: catFinal,
-      emoji: gasto.emoji || CATEGORIAS_CONFIG[catFinal].emoji,
-      fecha: new Date().toISOString()
-    };
-  } catch (err) {
-    console.error('Error de red/servidor:', err);
-    mostrarToast('Error al conectar con la API', '⚠️');
-    return null;
-  }
-}
+      if (notiParam && notiParam.trim().length > 0) {
+        mostrarToast('Analizando compra... ✨', '🤖');
+        const gastoCreado = await solicitarAnalisisServerless(decodeURIComponent(notiParam));
 
-async function procesarParametrosURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const notiParam = urlParams.get('notificacion');
-
-  // Solo procesar si el parámetro tiene contenido real
-  if (notiParam && notiParam.trim().length > 0) {
-    mostrarToast('Analizando compra... ✨', '🤖');
-    const gastoCreado = await solicitarAnalisisServerless(decodeURIComponent(notiParam));
-
-    if (gastoCreado && gastoCreado.monto > 0) {
-      await cargarGastosDesdeServidor();
-      poblarFiltroMeses();
-      renderizarTodo();
-      mostrarToast(`Añadido: ${gastoCreado.comercio} (${gastoCreado.monto.toFixed(2)}€)`, gastoCreado.emoji);
-      window.history.replaceState({}, document.title, window.location.pathname);
+        if (gastoCreado && gastoCreado.monto > 0) {
+          agregarGastoLocalmente(gastoCreado);
+          mostrarToast(`Añadido: ${gastoCreado.comercio} (${parseFloat(gastoCreado.monto).toFixed(2)}€)`, gastoCreado.emoji || '✨');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
     }
-  }
-}
 
     async function ejecutarSimulacion() {
       const txt = document.getElementById('sim-input').value;
       if (!txt.trim()) return;
 
       mostrarToast('Analizando gasto... ✨', '🤖');
-      const gasto = await solicitarAnalisisServerless(txt);
+      const gastoCreado = await solicitarAnalisisServerless(txt);
 
-      if (gasto && gasto.monto > 0) {
-        await cargarGastosDesdeServidor();
-        poblarFiltroMeses();
-        renderizarTodo();
-
-        mostrarToast(`¡Guardado! ${gasto.comercio} (-${gasto.monto.toFixed(2)}€)`, gasto.emoji);
+      if (gastoCreado && gastoCreado.monto > 0) {
+        agregarGastoLocalmente(gastoCreado);
+        mostrarToast(`¡Guardado! ${gastoCreado.comercio} (-${parseFloat(gastoCreado.monto).toFixed(2)}€)`, gastoCreado.emoji || '✨');
         document.getElementById('sim-input').value = '';
         cambiarTab('gastos');
       }
@@ -447,11 +442,13 @@ async function procesarParametrosURL() {
 
       const mesesOrdenados = Array.from(mesesSet).sort().reverse();
       const selectHTML = mesesOrdenados.map(m => `
-        <option value="${m}">${obtenerNombreMesLegible(m)}</option>
+        <option value="${m}" ${m === mesSeleccionado ? 'selected' : ''}>${obtenerNombreMesLegible(m)}</option>
       `).join('');
 
       document.getElementById('month-filter').innerHTML = selectHTML;
-      mesSeleccionado = mesesOrdenados[0];
+      if (!mesSeleccionado || !mesesSet.has(mesSeleccionado)) {
+        mesSeleccionado = mesesOrdenados[0];
+      }
     }
 
     function cambiarMes(nuevoMes) {
@@ -629,11 +626,13 @@ async function procesarParametrosURL() {
       document.getElementById('modal-confirm-title').innerText = '¿Borrar esta compra?';
       document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente de Postgres.';
       accionBorradoPendiente = async () => {
-        await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
-        await cargarGastosDesdeServidor();
-        poblarFiltroMeses();
-        renderizarTodo();
-        mostrarToast('Compra eliminada', '🗑️');
+        const res = await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          todosLosGastos = todosLosGastos.filter(g => g.id !== id);
+          poblarFiltroMeses();
+          renderizarTodo();
+          mostrarToast('Compra eliminada', '🗑️');
+        }
       };
       document.getElementById('modal-confirm').classList.remove('hidden');
     }
@@ -642,11 +641,13 @@ async function procesarParametrosURL() {
       document.getElementById('modal-confirm-title').innerText = `¿Limpiar ${obtenerNombreMesLegible(mesSeleccionado)}?`;
       document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras de este mes en Postgres.';
       accionBorradoPendiente = async () => {
-        await fetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
-        await cargarGastosDesdeServidor();
-        poblarFiltroMeses();
-        renderizarTodo();
-        mostrarToast('Mes limpiado', '✨');
+        const res = await fetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
+        if (res.ok) {
+          todosLosGastos = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) !== mesSeleccionado);
+          poblarFiltroMeses();
+          renderizarTodo();
+          mostrarToast('Mes limpiado', '✨');
+        }
       };
       document.getElementById('modal-confirm').classList.remove('hidden');
     }
@@ -696,20 +697,25 @@ async function procesarParametrosURL() {
         fecha: new Date().toISOString()
       };
 
-      await fetch('/api/gastos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevoGasto)
-      });
+      try {
+        const res = await fetch('/api/gastos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(nuevoGasto)
+        });
+
+        if (res.ok) {
+          const gastoCreado = await res.json();
+          agregarGastoLocalmente(gastoCreado);
+          mostrarToast(`Añadido a Postgres: ${comercio}`, gastoCreado.emoji || '✨');
+        }
+      } catch (err) {
+        console.error('Error guardando gasto:', err);
+      }
 
       cerrarModalNuevoGasto();
       document.getElementById('manual-comercio').value = '';
       document.getElementById('manual-monto').value = '';
-
-      await cargarGastosDesdeServidor();
-      poblarFiltroMeses();
-      renderizarTodo();
-      mostrarToast(`Añadido a Postgres: ${comercio}`, nuevoGasto.emoji);
     }
 
     function mostrarToast(mensaje, emoji = '✨') {

@@ -13,7 +13,6 @@ function getSupabaseClient() {
   });
 }
 
-// Lista exacta de categorías permitidas en tu Frontend
 const CATEGORIAS_VALIDAS = {
   'Shopping': '🛍️',
   'Self Care': '💅',
@@ -42,6 +41,30 @@ function normalizarCategoria(catRaw) {
   return 'Varios';
 }
 
+// Extracción rápida por Regex (0ms de IA)
+function extraerGastoPorRegex(texto) {
+  const matchMonto = texto.match(/(\d+[\.,]?\d*)\s*(?:€|EUR|euros)/i) || 
+                     texto.match(/(?:pago|compra|importe) (?:de )?(\d+[\.,]?\d*)/i);
+  
+  const monto = matchMonto ? parseFloat(matchMonto[1].replace(',', '.')) : 0;
+  if (!monto || isNaN(monto) || monto <= 0) return null;
+
+  let comercio = 'Compra Detectada';
+  const matchComercio = texto.match(/(?:en|de)\s+([A-Za-z0-9\s]+?)(?:\s+\d+|\s*$)/i);
+  if (matchComercio && matchComercio[1]) {
+    comercio = matchComercio[1].trim();
+  }
+
+  const categoria = normalizarCategoria(texto);
+
+  return { 
+    comercio: comercio.toLowerCase().includes('compra') && texto.toLowerCase().includes('mercadona') ? 'Mercadona' : comercio, 
+    monto, 
+    categoria, 
+    emoji: CATEGORIAS_VALIDAS[categoria] || '✨'
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -68,14 +91,18 @@ export default async function handler(req, res) {
   try {
     const supabase = getSupabaseClient();
     
-    // Llamada obligatoria a Gemini (si falla, saltará directo al catch)
-    const gastoRaw = await analizarGastoConGemini(texto);
+    // 1. Intento rápido sin IA
+    let gastoRaw = extraerGastoPorRegex(texto);
+
+    // 2. Si Regex no detecta un monto válido, usa Gemini
+    if (!gastoRaw) {
+      gastoRaw = await analizarGastoConGemini(texto);
+    }
 
     if (!gastoRaw || !gastoRaw.monto || isNaN(gastoRaw.monto) || gastoRaw.monto <= 0) {
       return res.status(400).json({
-        error: 'Gemini procesó la petición pero no devolvió un monto válido.',
-        textoProcesado: texto,
-        respuestaIA: gastoRaw
+        error: 'No se pudo extraer un monto válido del texto.',
+        textoProcesado: texto
       });
     }
 
@@ -105,38 +132,10 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error de IA en webhook.js:', error);
-    // Devuelve el error exacto de la API para que lo veas directamente en la web
-    return res.status(500).json({ error: `[ERROR IA] ${error.message}` });
+    console.error('Error en webhook.js:', error);
+    return res.status(500).json({ error: `[ERROR] ${error.message}` });
   }
 }
-
-/* 
-// =========================================================================
-// ⛔ PARTE REGEX / FALLBACK DESACTIVADA PARA PRUEBAS
-// =========================================================================
-function extraerGastoPorRegex(texto) {
-  const matchMonto = texto.match(/(\d+[\.,]?\d*)\s*(?:€|EUR|euros)/i) || 
-                     texto.match(/(?:pago|compra|importe) (?:de )?(\d+[\.,]?\d*)/i);
-  
-  const monto = matchMonto ? parseFloat(matchMonto[1].replace(',', '.')) : 0;
-
-  let comercio = 'Compra Detectada';
-  const matchComercio = texto.match(/(?:en|de)\s+([A-Za-z0-9\s]+?)(?:\s+\d+|\s*$)/i);
-  if (matchComercio && matchComercio[1]) {
-    comercio = matchComercio[1].trim();
-  }
-
-  const categoria = normalizarCategoria(texto);
-
-  return { 
-    comercio: comercio.toLowerCase().includes('compra') && texto.toLowerCase().includes('mercadona') ? 'Mercadona' : comercio, 
-    monto, 
-    categoria, 
-    emoji: CATEGORIAS_VALIDAS[categoria] 
-  };
-}
-*/
 
 async function analizarGastoConGemini(texto) {
   let apiKey = process.env.GEMINI_API_KEY;
@@ -179,7 +178,6 @@ async function analizarGastoConGemini(texto) {
     })
   });
 
-  // Si Google responde con 400, 403, 404, etc., lanzamos una excepción con el detalle del error
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(`Google Gemini API respondió HTTP ${response.status}: ${errorBody}`);
