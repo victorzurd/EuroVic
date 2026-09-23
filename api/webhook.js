@@ -1,18 +1,30 @@
-import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-const { Pool } = pg;
+// 1. Inicialización y validación de variables de entorno
+const supabaseUrl = process.env.POSTGRES_SUPABASE_URL;
+const supabaseServiceKey = process.env.POSTGRES_SUPABASE_SERVICE_ROLE_KEY;
 
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-  ssl: { rejectUnauthorized: false }
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Error: Faltan las variables POSTGRES_SUPABASE_URL o POSTGRES_SUPABASE_SERVICE_ROLE_KEY');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
+  // Configuración de CORS previa a cualquier retornos temprano
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Asegura el parseo del body si viene como string
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+  // Parsing seguro del cuerpo de la petición
   let body = req.body;
   if (typeof body === 'string') {
     try {
@@ -22,42 +34,40 @@ export default async function handler(req, res) {
     }
   }
 
+  // Extracción unificada del texto enviado
   const texto = body?.text || body?.notificacion || req.query?.text;
 
   if (!texto) {
     return res.status(400).json({ error: 'No se envió texto para analizar' });
   }
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
-
-  const { text } = req.body || {};
-  if (!text) return res.status(400).json({ error: 'Falta el texto del mensaje' });
-
   try {
-    const gasto = await analizarGastoConGemini(text);
+    const gasto = await analizarGastoConGemini(texto);
 
     if (!gasto || !gasto.monto) {
       return res.status(400).json({ error: 'No se pudo detectar un importe válido en el texto' });
     }
 
-    const query = `
-      INSERT INTO gastos (comercio, monto, categoria, emoji, fecha)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *;
-    `;
-    const values = [gasto.comercio, gasto.monto, gasto.categoria, gasto.emoji, new Date().toISOString()];
+    const { data, error } = await supabase
+      .from('gastos')
+      .insert([
+        {
+          comercio: gasto.comercio,
+          monto: gasto.monto,
+          categoria: gasto.categoria,
+          emoji: gasto.emoji,
+          fecha: new Date().toISOString()
+        }
+      ])
+      .select()
+      .single();
 
-    const { rows } = await pool.query(query, values);
+    if (error) throw error;
 
     return res.status(200).json({
       success: true,
       mensaje: `${gasto.emoji} ${gasto.comercio}: -${gasto.monto.toFixed(2)}€ (${gasto.categoria})`,
-      gasto: rows[0]
+      gasto: data
     });
 
   } catch (error) {
