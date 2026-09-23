@@ -361,47 +361,64 @@
     };
 
     async function solicitarAnalisisServerless(textoNotificacion) {
-      try {
-        const response = await fetch('/api/webhook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: textoNotificacion })
-        });
+  // 1. Validación previa en el cliente
+  if (!textoNotificacion || typeof textoNotificacion !== 'string' || !textoNotificacion.trim()) {
+    mostrarToast('El texto a analizar está vacío', '⚠️');
+    return null;
+  }
 
-        if (!response.ok) throw new Error('Error en el servidor');
+  try {
+    const response = await fetch('/api/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: textoNotificacion.trim() })
+    });
 
-        const parsed = await response.json();
-        const gasto = parsed.gasto || parsed;
-        const catFinal = CATEGORIAS_CONFIG[gasto.categoria] ? gasto.categoria : 'Varios';
+    const parsed = await response.json();
 
-        return {
-          comercio: gasto.comercio || 'Pago con Tarjeta',
-          monto: parseFloat(gasto.monto) || 0,
-          categoria: catFinal,
-          emoji: gasto.emoji || CATEGORIAS_CONFIG[catFinal].emoji,
-          fecha: new Date().toISOString()
-        };
-      } catch (err) {
-        mostrarToast('Error analizando texto', '⚠️');
-        return null;
-      }
+    // 2. Si el servidor responde con 400 o 500, leemos el mensaje exacto
+    if (!response.ok) {
+      const mensajeError = parsed.error || 'No se pudo analizar el gasto';
+      console.warn('Respuesta de error del servidor (400):', parsed);
+      mostrarToast(mensajeError, '⚠️');
+      return null;
     }
 
-    async function procesarParametrosURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const notiParam = urlParams.get('notificacion');
+    const gasto = parsed.gasto || parsed;
+    const catFinal = CATEGORIAS_CONFIG[gasto.categoria] ? gasto.categoria : 'Varios';
 
-      if (notiParam) {
-        mostrarToast('Analizando compra... ✨', '🤖');
-        const gastoCreado = await solicitarAnalisisServerless(decodeURIComponent(notiParam));
+    return {
+      comercio: gasto.comercio || 'Pago con Tarjeta',
+      monto: parseFloat(gasto.monto) || 0,
+      categoria: catFinal,
+      emoji: gasto.emoji || CATEGORIAS_CONFIG[catFinal].emoji,
+      fecha: new Date().toISOString()
+    };
+  } catch (err) {
+    console.error('Error de red/servidor:', err);
+    mostrarToast('Error al conectar con la API', '⚠️');
+    return null;
+  }
+}
 
-        if (gastoCreado && gastoCreado.monto > 0) {
-          await cargarGastosDesdeServidor();
-          mostrarToast(`Añadido: ${gastoCreado.comercio} (${gastoCreado.monto.toFixed(2)}€)`, gastoCreado.emoji);
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      }
+async function procesarParametrosURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const notiParam = urlParams.get('notificacion');
+
+  // Solo procesar si el parámetro tiene contenido real
+  if (notiParam && notiParam.trim().length > 0) {
+    mostrarToast('Analizando compra... ✨', '🤖');
+    const gastoCreado = await solicitarAnalisisServerless(decodeURIComponent(notiParam));
+
+    if (gastoCreado && gastoCreado.monto > 0) {
+      await cargarGastosDesdeServidor();
+      poblarFiltroMeses();
+      renderizarTodo();
+      mostrarToast(`Añadido: ${gastoCreado.comercio} (${gastoCreado.monto.toFixed(2)}€)`, gastoCreado.emoji);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
+  }
+}
 
     async function ejecutarSimulacion() {
       const txt = document.getElementById('sim-input').value;
