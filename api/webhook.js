@@ -14,6 +14,7 @@ function getSupabaseClient() {
 }
 
 export default async function handler(req, res) {
+  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -21,6 +22,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
+  // Parseo flexible del body
   let body = req.body;
   if (typeof body === 'string') {
     try {
@@ -82,7 +84,6 @@ function extraerGastoPorRegex(texto) {
   
   const monto = matchMonto ? parseFloat(matchMonto[1].replace(',', '.')) : 0;
 
-  // Extracción simple del comercio
   let comercio = 'Compra Detectada';
   const matchComercio = texto.match(/(?:en|de)\s+([A-Za-z0-9\s]+?)(?:\s+\d+|\s*$)/i);
   if (matchComercio && matchComercio[1]) {
@@ -99,43 +100,53 @@ async function analizarGastoConGemini(texto) {
     return extraerGastoPorRegex(texto);
   }
 
+  const model = 'gemini-1.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `Extrae la información del gasto bancario del siguiente texto:\n"${texto}"` }]
-            }
-          ],
-          generationConfig: {
-            response_mime_type: 'application/json',
-            response_schema: {
-              type: 'OBJECT',
-              properties: {
-                comercio: { type: 'STRING' },
-                monto: { type: 'NUMBER' },
-                categoria: { 
-                  type: 'STRING', 
-                  enum: ['Shopping', 'Self Care', 'Brunch & Desayunos', 'Cenas & Copas', 'Fiesta & Eventos', 'Supermercado', 'Escapadas', 'Movilidad', 'Varios'] 
-                },
-                emoji: { type: 'STRING' }
-              },
-              required: ['comercio', 'monto', 'categoria', 'emoji']
-            }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `Extrae la información del gasto bancario del siguiente texto:\n"${texto}"` }]
           }
-        })
-      }
-    );
+        ],
+        generationConfig: {
+          response_mime_type: 'application/json',
+          response_schema: {
+            type: 'OBJECT',
+            properties: {
+              comercio: { type: 'STRING' },
+              monto: { type: 'NUMBER' },
+              categoria: { 
+                type: 'STRING', 
+                enum: [
+                  'Shopping', 
+                  'Self Care', 
+                  'Brunch & Desayunos', 
+                  'Cenas & Copas', 
+                  'Fiesta & Eventos', 
+                  'Supermercado', 
+                  'Escapadas', 
+                  'Movilidad', 
+                  'Varios'
+                ] 
+              },
+              emoji: { type: 'STRING' }
+            },
+            required: ['comercio', 'monto', 'categoria', 'emoji']
+          }
+        }
+      })
+    });
 
     const data = await response.json();
 
-    if (data.error || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      console.warn('Falló la llamada a Gemini API, activando fallback Regex. Error:', data.error);
+    if (!response.ok || data.error || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.warn(`Respuesta no válida de Gemini API (${response.status}), activando fallback Regex.`, data.error);
       return extraerGastoPorRegex(texto);
     }
 
