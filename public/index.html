@@ -1,128 +1,688 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full bg-[#FAF5F0]">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Eurovic ✨</title>
-  <!-- Metatags para que funcione como App de iOS (PWA) -->
+  
+  <!-- iOS PWA Capabilities -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Eurovic">
+  <link rel="apple-touch-icon" href="https://placehold.co/180x180/FBCFE8/831843?text=Eurovic">
+
+  <!-- Fonts & Tailwind CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js CDN for Visual Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            cream: '#FAF5F0',
+            blush: {
+              50: '#FFF5F7',
+              100: '#FDE8ED',
+              200: '#FBCFE8',
+              300: '#F4A8C4',
+              400: '#E879A8',
+              500: '#DB4D88',
+              900: '#500724',
+              950: '#300213',
+            },
+            lavender: {
+              50: '#FAF5FF',
+              100: '#F3E8FF',
+              200: '#E9D5FF',
+              500: '#A855F7',
+              900: '#581C87',
+            },
+            gold: {
+              400: '#FACC15',
+              500: '#EAB308',
+              600: '#CA8A04',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    body { 
-      background-color: #FAF5F0; 
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
+    /* Custom scrollbar & iOS smooth scroll */
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; -webkit-tap-highlight-color: transparent; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(251, 207, 232, 0.4);
+    }
+    .active-tab {
+      background: #FFFFFF;
+      color: #300213;
+      box-shadow: 0 4px 12px rgba(232, 121, 168, 0.15);
     }
   </style>
 </head>
-<body class="p-6 text-pink-950 max-w-md mx-auto pb-12">
 
-  <!-- Header -->
-  <div class="flex justify-between items-center my-4">
-    <div>
-      <h1 class="text-3xl font-extrabold tracking-tight text-pink-900">Eurovic ✨</h1>
-      <p class="text-xs text-pink-400 font-medium">Your daily aesthetics & expenses</p>
-    </div>
-    <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-lg border border-pink-200 shadow-sm">
-      👑
-    </div>
-  </div>
+<body class="h-full bg-[#FAF5F0] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
 
-  <!-- Main Balance Card -->
-  <div class="bg-gradient-to-br from-pink-200 via-pink-100 to-amber-50 rounded-3xl p-6 shadow-sm border border-pink-200/50 mb-6 text-center">
-    <span class="text-xs font-semibold tracking-wider uppercase text-pink-500">Gastado este mes</span>
-    <div id="total-amount" class="text-4xl font-extrabold text-pink-950 my-2">0,00 €</div>
-    <div class="inline-block bg-white/70 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-pink-700 shadow-sm">
-      💅 Todo bajo control, queen
-    </div>
-  </div>
+  <!-- Mobile Container Wrapper -->
+  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-24 relative">
 
-  <!-- Categories Grid -->
-  <h2 class="text-xs font-bold uppercase tracking-wider text-pink-400 mb-3">Categorías top</h2>
-  <div class="grid grid-cols-2 gap-3 mb-6">
-    <div class="bg-white/80 p-4 rounded-2xl border border-pink-100 shadow-sm flex items-center gap-3">
-      <span class="text-2xl">🛍️</span>
+    <!-- Top Navigation Header -->
+    <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#FAF5F0]/80 backdrop-blur-md z-30">
       <div>
-        <p class="text-xs text-pink-400 font-medium">Shopping</p>
-        <p id="cat-shopping" class="text-sm font-bold text-pink-900">0,00 €</p>
+        <div class="flex items-center gap-1.5">
+          <h1 class="text-2xl font-extrabold tracking-tight text-blush-950">Eurovic</h1>
+          <span class="inline-block w-2 h-2 rounded-full bg-gold-400 animate-pulse"></span>
+        </div>
+        <p class="text-[11px] font-semibold text-blush-400 tracking-wide uppercase">Clean girl expenses ✨</p>
+      </div>
+
+      <!-- Month Selector Pills -->
+      <div class="flex items-center gap-2">
+        <select id="month-filter" onchange="cambiarMes(this.value)" class="bg-white/90 border border-blush-200 text-blush-950 text-xs font-bold py-2 px-3 rounded-full shadow-sm outline-none cursor-pointer focus:ring-2 focus:ring-blush-300">
+          <!-- Dynamically populated options -->
+        </select>
+        <button onclick="abrirModalNuevoGasto()" class="w-9 h-9 rounded-full bg-gradient-to-r from-blush-400 to-blush-500 text-white flex items-center justify-center font-bold shadow-md hover:opacity-90 active:scale-95 transition-all text-lg">
+          +
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Views Container -->
+    <main class="px-5 space-y-6 flex-1">
+
+      <!-- ================= TAB 1: DASHBOARD ================= -->
+      <section id="view-dashboard" class="space-y-6">
+
+        <!-- Monthly Balance Card -->
+        <div class="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-blush-200 via-blush-100 to-amber-50 border border-blush-200/60 shadow-lg shadow-blush-200/30">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/30 blur-2xl pointer-events-none"></div>
+
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Gastado este mes</span>
+            <span id="badge-comparativa" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/80 text-blush-900 border border-blush-200">
+              0% vs mes pasado
+            </span>
+          </div>
+
+          <div id="total-gastado" class="text-4xl font-extrabold text-blush-950 tracking-tight my-1">
+            0,00 €
+          </div>
+
+          <!-- Budget Bar -->
+          <div class="mt-4 pt-3 border-t border-blush-200/60">
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+              <span class="text-blush-900">Presupuesto (1.000 €)</span>
+              <span id="porcentaje-presupuesto" class="text-blush-500">0%</span>
+            </div>
+            <div class="w-full h-2.5 bg-white/70 rounded-full overflow-hidden p-0.5 border border-blush-200">
+              <div id="bar-presupuesto" class="h-full rounded-full bg-gradient-to-r from-blush-300 to-blush-500 transition-all duration-700 w-0"></div>
+            </div>
+            <p id="status-presupuesto" class="text-[11px] font-medium text-blush-700 mt-2 text-center">
+              💅 On budget, queen
+            </p>
+          </div>
+        </div>
+
+        <!-- Expense Category Grid Breakdown -->
+        <div>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-blush-400 mb-3 px-1">Categorías de gasto</h2>
+          <div id="category-grid" class="grid grid-cols-2 gap-3">
+            <!-- Dynamically injected category tiles -->
+          </div>
+        </div>
+
+        <!-- Quick Recent Transactions Preview -->
+        <div>
+          <div class="flex justify-between items-center mb-3 px-1">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-blush-400">Últimos movimientos</h2>
+            <button onclick="cambiarTab('transacciones')" class="text-xs font-bold text-blush-500 hover:underline">Ver todos ➔</button>
+          </div>
+          <div id="dashboard-recent-list" class="space-y-2.5">
+            <!-- Dynamic recent transactions -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 2: ANALYTICS ================= -->
+      <section id="view-analytics" class="space-y-6 hidden">
+        
+        <div class="glass-card p-5 rounded-3xl space-y-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-blush-400">Distribución por categoría</h2>
+          <div class="w-full h-52 relative flex items-center justify-center">
+            <canvas id="chart-donnut"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-3xl space-y-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-blush-400">Tendencia de gasto diario</h2>
+          <div class="w-full h-44">
+            <canvas id="chart-daily"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 3: TRANSACTIONS LIST ================= -->
+      <section id="view-transacciones" class="space-y-4 hidden">
+
+        <!-- Search and Category Filter Controls -->
+        <div class="space-y-2">
+          <input type="text" id="search-input" oninput="filtrarTransacciones()" placeholder="🔍 Buscar comercio (Zara, Starbucks...)" class="w-full bg-white/90 border border-blush-200 text-xs text-blush-950 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blush-300 placeholder:text-blush-300 shadow-sm">
+          
+          <div class="flex gap-2 overflow-x-auto pb-1 text-xs no-scrollbar" id="category-filter-bar">
+            <!-- Dynamic filter chips -->
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center px-1">
+          <span id="count-transacciones" class="text-xs font-bold text-blush-400">0 movimientos</span>
+          <button onclick="borrarGastosMesActual()" class="text-[11px] font-semibold text-rose-400 hover:text-rose-600 underline">Limpiar mes</button>
+        </div>
+
+        <div id="full-expenses-list" class="space-y-2.5">
+          <!-- Full scrollable transaction items -->
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (iOS Style) -->
+    <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md bg-white/90 backdrop-blur-xl border border-blush-200/70 shadow-xl shadow-blush-900/5 rounded-full p-1.5 flex justify-around items-center z-40">
+      <button onclick="cambiarTab('dashboard')" id="nav-dashboard" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 active-tab transition-all">
+        <span class="text-base">✨</span>
+        <span>Dashboard</span>
+      </button>
+      <button onclick="cambiarTab('analytics')" id="nav-analytics" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
+        <span class="text-base">📊</span>
+        <span>Estadísticas</span>
+      </button>
+      <button onclick="cambiarTab('transacciones')" id="nav-transacciones" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
+        <span class="text-base">🛍️</span>
+        <span>Gastos</span>
+      </button>
+    </nav>
+
+    <!-- Modal for Manual Expense Addition -->
+    <div id="modal-nuevo" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm border border-blush-100 shadow-2xl space-y-4 animate-in slide-in-from-bottom duration-300">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-blush-950">Añadir gasto manual ✨</h3>
+          <button onclick="cerrarModalNuevoGasto()" class="text-blush-400 text-xl font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="guardarGastoManual(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-blush-400 uppercase mb-1">Comercio / Tienda</label>
+            <input type="text" id="manual-comercio" required placeholder="Ej: Zara, Starbucks" class="w-full bg-blush-50 border border-blush-200 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blush-300">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-blush-400 uppercase mb-1">Importe (€)</label>
+            <input type="number" step="0.01" id="manual-monto" required placeholder="0.00" class="w-full bg-blush-50 border border-blush-200 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blush-300">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-blush-400 uppercase mb-1">Categoría</label>
+            <select id="manual-categoria" class="w-full bg-blush-50 border border-blush-200 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blush-300">
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Self Care">💅 Self Care</option>
+              <option value="Coffee & Brunch">☕ Coffee & Brunch</option>
+              <option value="Fiesta">🥂 Fiesta</option>
+              <option value="Movilidad">🚕 Movilidad</option>
+              <option value="Varios">✨ Varios</option>
+            </select>
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-xl shadow-md hover:opacity-95 transition-all text-sm pt-3">
+            Guardar gasto 💖
+          </button>
+        </form>
       </div>
     </div>
-    <div class="bg-white/80 p-4 rounded-2xl border border-pink-100 shadow-sm flex items-center gap-3">
-      <span class="text-2xl">☕</span>
-      <div>
-        <p class="text-xs text-pink-400 font-medium">Brunch & Coffee</p>
-        <p id="cat-coffee" class="text-sm font-bold text-pink-900">0,00 €</p>
-      </div>
-    </div>
+
   </div>
 
-  <!-- Recent Transactions List -->
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-xs font-bold uppercase tracking-wider text-pink-400">Últimos caprichos</h2>
-    <button onclick="borrarTodo()" class="text-[10px] text-pink-300 underline">Limpiar</button>
-  </div>
-  
-  <div id="expenses-list" class="space-y-3">
-    <!-- Se llena dinámicamente -->
-  </div>
-
+  <!-- JavaScript Logic & Chart Config -->
   <script>
-    function obtenerGastos() {
+    const CATEGORIAS_CONFIG = {
+      'Shopping': { emoji: '🛍️', bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-200', color: '#E879A8' },
+      'Self Care': { emoji: '💅', bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', color: '#A855F7' },
+      'Coffee & Brunch': { emoji: '☕', bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200', color: '#F59E0B' },
+      'Fiesta': { emoji: '🥂', bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-200', color: '#F43F5E' },
+      'Movilidad': { emoji: '🚕', bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', color: '#3B82F6' },
+      'Varios': { emoji: '✨', bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200', color: '#10B981' }
+    };
+
+    const PRESUPUESTO_MENSUAL = 1000;
+    let mesSeleccionado = '';
+    let categoriaFiltroSeleccionada = 'Todas';
+    let chartDonutInstance = null;
+    let chartDailyInstance = null;
+
+    // Load Expenses Data from LocalStorage
+    function obtenerTodosLosGastos() {
       return JSON.parse(localStorage.getItem('eurovic_gastos') || '[]');
     }
 
-    function render() {
-      const gastos = obtenerGastos();
-      const total = gastos.reduce((acc, g) => acc + g.monto, 0);
-      document.getElementById('total-amount').innerText = total.toFixed(2).replace('.', ',') + ' €';
+    function guardarGastosEnStorage(gastos) {
+      localStorage.setItem('eurovic_gastos', JSON.stringify(gastos));
+    }
 
-      // Totales por categoría
-      const totalShopping = gastos.filter(g => g.categoria === 'Shopping').reduce((acc, g) => acc + g.monto, 0);
-      const totalCoffee = gastos.filter(g => g.categoria === 'Coffee & Brunch' || g.categoria === 'Brunch & Coffee').reduce((acc, g) => acc + g.monto, 0);
+    // Format Helpers
+    function formatearFecha(fechaStr) {
+      const d = new Date(fechaStr);
+      if (isNaN(d.getTime())) return fechaStr;
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    }
+
+    function obtenerClaveMes(fechaStr) {
+      const d = new Date(fechaStr);
+      if (isNaN(d.getTime())) {
+        const partes = fechaStr.split('/');
+        if(partes.length === 3) return `${partes[2]}-${partes[1].padStart(2,'0')}`;
+        return new Date().toISOString().slice(0,7);
+      }
+      return d.toISOString().slice(0, 7); // "YYYY-MM"
+    }
+
+    function obtenerNombreMesLegible(claveYYYYMM) {
+      const [year, month] = claveYYYYMM.split('-');
+      const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
+      return `${nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1)} ${year}`;
+    }
+
+    window.onload = function() {
+      inicializarDatosPruebaSiVacio();
+      procesarParametrosURL();
+      poblarFiltroMeses();
+      renderizarTodo();
+    };
+
+    function inicializarDatosPruebaSiVacio() {
+      const gastos = obtenerTodosLosGastos();
+      if (gastos.length === 0) {
+        const hoy = new Date();
+        const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+        const mesPasado = new Date(hoy); mesPasado.setMonth(hoy.getMonth() - 1);
+
+        const gastosIniciales = [
+          { id: 1, comercio: 'Zara', monto: 89.90, categoria: 'Shopping', emoji: '🛍️', fecha: hoy.toISOString() },
+          { id: 2, comercio: 'Starbucks', monto: 5.40, categoria: 'Coffee & Brunch', emoji: '☕', fecha: hoy.toISOString() },
+          { id: 3, comercio: 'Sephora', monto: 42.10, categoria: 'Self Care', emoji: '💅', fecha: ayer.toISOString() },
+          { id: 4, comercio: 'Uber', monto: 14.20, categoria: 'Movilidad', emoji: '🚕', fecha: ayer.toISOString() },
+          { id: 5, comercio: 'Discoteca Opium', monto: 35.00, categoria: 'Fiesta', emoji: '🥂', fecha: mesPasado.toISOString() }
+        ];
+        guardarGastosEnStorage(gastosIniciales);
+      }
+    }
+
+    // Auto capture incoming shortcuts via URL ?nuevo_gasto=...
+    function procesarParametrosURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const nuevoGastoParam = urlParams.get('nuevo_gasto');
+      if (nuevoGastoParam) {
+        try {
+          const gastoObj = JSON.parse(decodeURIComponent(nuevoGastoParam));
+          const gastos = obtenerTodosLosGastos();
+          const nuevoItem = {
+            id: Date.now(),
+            comercio: gastoObj.comercio || 'Pago con Tarjeta',
+            monto: parseFloat(gastoObj.monto || 0),
+            categoria: gastoObj.categoria || 'Varios',
+            emoji: gastoObj.emoji || CATEGORIAS_CONFIG[gastoObj.categoria]?.emoji || '✨',
+            fecha: new Date().toISOString()
+          };
+          gastos.unshift(nuevoItem);
+          guardarGastosEnStorage(gastos);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch(e) {
+          console.error('Error parseando nuevo_gasto:', e);
+        }
+      }
+    }
+
+    function poblarFiltroMeses() {
+      const gastos = obtenerTodosLosGastos();
+      const mesesSet = new Set();
       
-      document.getElementById('cat-shopping').innerText = totalShopping.toFixed(2).replace('.', ',') + ' €';
-      document.getElementById('cat-coffee').innerText = totalCoffee.toFixed(2).replace('.', ',') + ' €';
+      const mesActualKey = new Date().toISOString().slice(0, 7);
+      mesesSet.add(mesActualKey);
 
-      const listHtml = gastos.map(g => `
-        <div class="bg-white p-4 rounded-2xl border border-pink-50 shadow-sm flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-xl">${g.emoji || '✨'}</div>
-            <div>
-              <p class="font-bold text-sm text-pink-950">${g.comercio}</p>
-              <p class="text-[10px] text-pink-400">${g.fecha}</p>
-            </div>
-          </div>
-          <span class="font-bold text-sm text-pink-900">-${g.monto.toFixed(2).replace('.', ',')} €</span>
-        </div>
+      gastos.forEach(g => mesesSet.add(obtenerClaveMes(g.fecha)));
+
+      const mesesOrdenados = Array.from(mesesSet).sort().reverse();
+      const selectHTML = mesesOrdenados.map(m => `
+        <option value="${m}">${obtenerNombreMesLegible(m)}</option>
       `).join('');
 
-      document.getElementById('expenses-list').innerHTML = listHtml || '<p class="text-xs text-pink-300 text-center py-6">Aún no hay compras guardadas ✨</p>';
+      document.getElementById('month-filter').innerHTML = selectHTML;
+      mesSeleccionado = mesesOrdenados[0];
     }
 
-    function borrarTodo() {
-      if (confirm("¿Quieres borrar el historial de gastos?")) {
-        localStorage.removeItem('eurovic_gastos');
-        render();
+    function cambiarMes(nuevoMes) {
+      mesSeleccionado = nuevoMes;
+      renderizarTodo();
+    }
+
+    function renderizarTodo() {
+      const todosLosGastos = obtenerTodosLosGastos();
+      
+      // Filtrar por mes seleccionado
+      const gastosDelMes = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
+      const totalMes = gastosDelMes.reduce((acc, g) => acc + g.monto, 0);
+
+      // Renderizar Total y Barra de Presupuesto
+      document.getElementById('total-gastado').innerText = totalMes.toFixed(2).replace('.', ',') + ' €';
+
+      const porcentaje = Math.min(Math.round((totalMes / PRESUPUESTO_MENSUAL) * 100), 100);
+      document.getElementById('porcentaje-presupuesto').innerText = `${porcentaje}%`;
+      document.getElementById('bar-presupuesto').style.width = `${porcentaje}%`;
+
+      const statusEl = document.getElementById('status-presupuesto');
+      if (porcentaje >= 100) {
+        statusEl.innerText = '🚨 Ojo queen, has superado el presupuesto';
+        statusEl.className = 'text-[11px] font-semibold text-rose-500 mt-2 text-center';
+      } else if (porcentaje >= 80) {
+        statusEl.innerText = '⚠️ Llevas un 80% gastado del presupuesto';
+        statusEl.className = 'text-[11px] font-semibold text-amber-600 mt-2 text-center';
+      } else {
+        statusEl.innerText = '💅 On budget, queen';
+        statusEl.className = 'text-[11px] font-medium text-blush-700 mt-2 text-center';
+      }
+
+      // Comparativa con mes anterior
+      renderizarComparativaMesAnterior(todosLosGastos, totalMes);
+
+      // Renderizar Grid de Categorías
+      renderizarCategoryGrid(gastosDelMes);
+
+      // Renderizar Lista Corta Dashboard
+      renderizarListaRecientes(gastosDelMes);
+
+      // Renderizar Lista Completa con filtros
+      renderizarListaTransaccionesCompleta(gastosDelMes);
+
+      // Actualizar Gráficos
+      actualizarGraficos(gastosDelMes);
+    }
+
+    function renderizarComparativaMesAnterior(todos, totalActual) {
+      const [year, month] = mesSeleccionado.split('-').map(Number);
+      const fechaPrevio = new Date(year, month - 2, 1);
+      const clavePrevio = fechaPrevio.toISOString().slice(0, 7);
+
+      const gastosPrevios = todos.filter(g => obtenerClaveMes(g.fecha) === clavePrevio);
+      const totalPrevio = gastosPrevios.reduce((acc, g) => acc + g.monto, 0);
+
+      const badge = document.getElementById('badge-comparativa');
+      if (totalPrevio === 0) {
+        badge.innerText = 'Primer mes registrado ✨';
+      } else {
+        const diff = ((totalActual - totalPrevio) / totalPrevio) * 100;
+        const signo = diff > 0 ? '+' : '';
+        badge.innerText = `${signo}${diff.toFixed(0)}% vs mes anterior`;
       }
     }
 
-    // Comprobar si llega un gasto enviado desde el Atajo del iPhone
-    const urlParams = new URLSearchParams(window.location.search);
-    const nuevoGastoParam = urlParams.get('nuevo_gasto');
-    if (nuevoGastoParam) {
-      try {
-        const gasto = JSON.parse(decodeURIComponent(nuevoGastoParam));
-        const gastos = obtenerGastos();
-        gastos.unshift(gasto);
-        localStorage.setItem('eurovic_gastos', JSON.stringify(gastos));
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch(e) {
-        console.error("Error al guardar el gasto:", e);
+    function renderizarCategoryGrid(gastosMes) {
+      const grid = document.getElementById('category-grid');
+      
+      const HTML = Object.keys(CATEGORIAS_CONFIG).map(catKey => {
+        const conf = CATEGORIAS_CONFIG[catKey];
+        const totalCat = gastosMes
+          .filter(g => g.categoria === catKey)
+          .reduce((acc, g) => acc + g.monto, 0);
+
+        return `
+          <div class="glass-card p-3.5 rounded-2xl flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl ${conf.bg} ${conf.text} flex items-center justify-center text-xl shrink-0">
+              ${conf.emoji}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] font-medium text-blush-400 truncate">${catKey}</p>
+              <p class="text-sm font-extrabold text-blush-950">${totalCat.toFixed(2).replace('.', ',')} €</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.innerHTML = HTML;
+    }
+
+    function renderizarListaRecientes(gastosMes) {
+      const container = document.getElementById('dashboard-recent-list');
+      const ultimos = gastosMes.slice(0, 3);
+
+      if (ultimos.length === 0) {
+        container.innerHTML = '<p class="text-xs text-blush-300 text-center py-4">Sin gastos este mes ✨</p>';
+        return;
+      }
+
+      container.innerHTML = ultimos.map(g => crearHTMLGastoItem(g)).join('');
+    }
+
+    function renderizarListaTransaccionesCompleta(gastosMes) {
+      const container = document.getElementById('full-expenses-list');
+      const searchVal = document.getElementById('search-input').value.toLowerCase();
+      
+      let filtrados = gastosMes.filter(g => {
+        const coincideNombre = g.comercio.toLowerCase().includes(searchVal);
+        const coincideCat = (categoriaFiltroSeleccionada === 'Todas' || g.categoria === categoriaFiltroSeleccionada);
+        return coincideNombre && coincideCat;
+      });
+
+      document.getElementById('count-transacciones').innerText = `${filtrados.length} movimientos`;
+
+      // Render Filter Chips Bar
+      const categories = ['Todas', ...Object.keys(CATEGORIAS_CONFIG)];
+      document.getElementById('category-filter-bar').innerHTML = categories.map(cat => `
+        <button onclick="filtrarPorCategoria('${cat}')" class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${categoriaFiltroSeleccionada === cat ? 'bg-blush-500 text-white shadow-sm' : 'bg-white text-blush-400 border border-blush-100'}">
+          ${cat}
+        </button>
+      `).join('');
+
+      if (filtrados.length === 0) {
+        container.innerHTML = '<p class="text-xs text-blush-300 text-center py-8">No se encontraron movimientos ✨</p>';
+        return;
+      }
+
+      container.innerHTML = filtrados.map(g => crearHTMLGastoItem(g, true)).join('');
+    }
+
+    function crearHTMLGastoItem(g, conBotonBorrar = false) {
+      const conf = CATEGORIAS_CONFIG[g.categoria] || CATEGORIAS_CONFIG['Varios'];
+      return `
+        <div class="bg-white p-3.5 rounded-2xl border border-blush-100/70 shadow-sm flex justify-between items-center group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl ${conf.bg} flex items-center justify-center text-xl shrink-0">
+              ${g.emoji || conf.emoji}
+            </div>
+            <div>
+              <p class="font-bold text-xs text-blush-950">${g.comercio}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${conf.bg} ${conf.text}">${g.categoria}</span>
+                <span class="text-[10px] text-blush-300">${formatearFecha(g.fecha)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm text-blush-950">-${g.monto.toFixed(2).replace('.', ',')} €</span>
+            ${conBotonBorrar ? `
+              <button onclick="eliminarGasto(${g.id})" class="text-rose-300 hover:text-rose-500 text-xs p-1">
+                🗑️
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function filtrarPorCategoria(cat) {
+      categoriaFiltroSeleccionada = cat;
+      const todos = obtenerTodosLosGastos();
+      const gastosMes = todos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
+      renderizarListaTransaccionesCompleta(gastosMes);
+    }
+
+    function filtrarTransacciones() {
+      const todos = obtenerTodosLosGastos();
+      const gastosMes = todos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
+      renderizarListaTransaccionesCompleta(gastosMes);
+    }
+
+    function eliminarGasto(id) {
+      let gastos = obtenerTodosLosGastos();
+      gastos = gastos.filter(g => g.id !== id);
+      guardarGastosEnStorage(gastos);
+      renderizarTodo();
+    }
+
+    function borrarGastosMesActual() {
+      if (confirm(`¿Quieres borrar los gastos de ${obtenerNombreMesLegible(mesSeleccionado)}?`)) {
+        let gastos = obtenerTodosLosGastos();
+        gastos = gastos.filter(g => obtenerClaveMes(g.fecha) !== mesSeleccionado);
+        guardarGastosEnStorage(gastos);
+        poblarFiltroMeses();
+        renderizarTodo();
       }
     }
 
-    render();
+    function actualizarGraficos(gastosMes) {
+      // 1. Donut Chart Data
+      const categoriasKeys = Object.keys(CATEGORIAS_CONFIG);
+      const dataMontoCat = categoriasKeys.map(cat => {
+        return gastosMes.filter(g => g.categoria === cat).reduce((acc, g) => acc + g.monto, 0);
+      });
+      const colorsCat = categoriasKeys.map(cat => CATEGORIAS_CONFIG[cat].color);
+
+      const ctxDonut = document.getElementById('chart-donnut').getContext('2d');
+      if (chartDonutInstance) chartDonutInstance.destroy();
+
+      chartDonutInstance = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: categoriasKeys,
+          datasets: [{
+            data: dataMontoCat,
+            backgroundColor: colorsCat,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10, family: 'Plus Jakarta Sans' } } }
+          },
+          cutout: '70%'
+        }
+      });
+
+      // 2. Daily Spending Trend Chart
+      const diasEnMes = 30; // Approximation for daily grid
+      const gastosPorDia = new Array(diasEnMes).fill(0);
+      
+      gastosMes.forEach(g => {
+        const dia = new Date(g.fecha).getDate();
+        if (dia >= 1 && dia <= diasEnMes) {
+          gastosPorDia[dia - 1] += g.monto;
+        }
+      });
+
+      const ctxDaily = document.getElementById('chart-daily').getContext('2d');
+      if (chartDailyInstance) chartDailyInstance.destroy();
+
+      chartDailyInstance = new Chart(ctxDaily, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: diasEnMes}, (_, i) => i + 1),
+          datasets: [{
+            label: 'Gasto (€)',
+            data: gastosPorDia,
+            borderColor: '#E879A8',
+            backgroundColor: 'rgba(232, 121, 168, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // Navigation & Modal Controls
+    function cambiarTab(tabName) {
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-analytics').classList.add('hidden');
+      document.getElementById('view-transacciones').classList.add('hidden');
+
+      document.getElementById('nav-dashboard').className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all";
+      document.getElementById('nav-analytics').className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all";
+      document.getElementById('nav-transacciones').className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all";
+
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+      document.getElementById(`nav-${tabName}`).className = "flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 active-tab transition-all";
+    }
+
+    function abrirModalNuevoGasto() {
+      document.getElementById('modal-nuevo').classList.remove('hidden');
+    }
+
+    function cerrarModalNuevoGasto() {
+      document.getElementById('modal-nuevo').classList.add('hidden');
+    }
+
+    function guardarGastoManual(e) {
+      e.preventDefault();
+      const comercio = document.getElementById('manual-comercio').value;
+      const monto = parseFloat(document.getElementById('manual-monto').value);
+      const categoria = document.getElementById('manual-categoria').value;
+
+      const nuevoGasto = {
+        id: Date.now(),
+        comercio,
+        monto,
+        categoria,
+        emoji: CATEGORIAS_CONFIG[categoria]?.emoji || '✨',
+        fecha: new Date().toISOString()
+      };
+
+      const gastos = obtenerTodosLosGastos();
+      gastos.unshift(nuevoGasto);
+      guardarGastosEnStorage(gastos);
+
+      cerrarModalNuevoGasto();
+      document.getElementById('manual-comercio').value = '';
+      document.getElementById('manual-monto').value = '';
+
+      poblarFiltroMeses();
+      renderizarTodo();
+    }
   </script>
 </body>
 </html>
