@@ -1,8 +1,9 @@
 {
   "name": "eurovic",
   "version": "1.0.0",
-  "description": "",
+  "description": "Expense tracker app",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,12 +14,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "bugs": {
     "url": "https://github.com/victorzurd/EuroVic/issues"
   },
   "homepage": "https://github.com/victorzurd/EuroVic#readme",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1"
+    "@google/generative-ai": "^0.24.1",
+    "@vercel/postgres": "^0.8.0"
   }
 }

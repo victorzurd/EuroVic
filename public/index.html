@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Eurovic ✨ | Clean Girl Expense Tracker</title>
+  <title>Eurovic ✨ | Expense Tracker</title>
 
-  <!-- iOS PWA Capabilities -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Eurovic">
   <link rel="apple-touch-icon" href="https://placehold.co/180x180/FBCFE8/831843?text=Eurovic✨">
 
-  <!-- Fonts & Tailwind CSS CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
@@ -82,13 +80,10 @@
 
 <body class="h-full bg-[#FAF5F0] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
 
-  <!-- Floating Toast Container -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm pointer-events-none flex flex-col gap-2"></div>
 
-  <!-- Mobile Screen Container Wrapper -->
   <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-24 relative shadow-2xl bg-[#FAF5F0]">
 
-    <!-- Top Navigation Header -->
     <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#FAF5F0]/90 backdrop-blur-md z-30 border-b border-blush-100/50">
       <div>
         <div class="flex items-center gap-2">
@@ -98,10 +93,8 @@
         <p class="text-[10px] font-bold text-blush-400 tracking-wider uppercase">Clean girl expenses ✨</p>
       </div>
 
-      <!-- Month Selector Pills & Add Button -->
       <div class="flex items-center gap-2">
         <select id="month-filter" onchange="cambiarMes(this.value)" class="bg-white/90 border border-blush-200 text-blush-950 text-xs font-bold py-2 px-3 rounded-full shadow-sm outline-none cursor-pointer focus:ring-2 focus:ring-blush-300 transition-all">
-          <!-- Dynamically populated options -->
         </select>
         <button onclick="abrirModalNuevoGasto()" class="w-9 h-9 rounded-full bg-gradient-to-r from-blush-400 to-blush-500 text-white flex items-center justify-center font-bold shadow-md hover:opacity-90 active:scale-95 transition-all text-xl">
           +
@@ -109,20 +102,17 @@
       </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="px-5 space-y-6 flex-1 pt-3">
 
-      <!-- ================= TAB 1: GASTOS (MAIN VIEW) ================= -->
       <section id="view-gastos" class="space-y-5">
 
-        <!-- Total Spent Banner -->
         <div class="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-blush-200 via-blush-100 to-amber-50 border border-blush-200/60 shadow-lg shadow-blush-200/30">
           <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/40 blur-2xl pointer-events-none"></div>
 
           <div class="flex justify-between items-start mb-1">
             <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Total Gastado Este Mes</span>
             <span id="badge-comparativa" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/80 text-blush-900 border border-blush-200 shadow-xs">
-              Sin datos
+              Cargando...
             </span>
           </div>
 
@@ -132,41 +122,33 @@
 
           <div class="flex justify-between items-center text-xs text-blush-800 font-semibold pt-2 border-t border-blush-200/60">
             <span id="txt-resumen-compras">0 compras registradas</span>
-            <span class="text-[11px] text-blush-400 font-medium">💅 Shopping mode on</span>
+            <span class="text-[11px] text-blush-400 font-medium">🐘 Vercel Postgres</span>
           </div>
         </div>
 
-        <!-- Quick Actions & Search -->
         <div class="space-y-3">
           <div class="flex gap-2">
             <input type="text" id="search-input" oninput="filtrarTransacciones()" placeholder="🔍 Buscar (Zara, Sephora, Starbucks...)" class="w-full bg-white border border-blush-200 text-xs text-blush-950 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blush-300 placeholder:text-blush-300 shadow-sm">
           </div>
 
-          <!-- Category Filter Chips -->
           <div class="flex gap-2 overflow-x-auto pb-1 text-xs no-scrollbar" id="category-filter-bar">
-            <!-- Dynamic category filter chips -->
           </div>
         </div>
 
-        <!-- Expense Transactions List Header -->
         <div class="flex justify-between items-center px-1">
           <span id="count-transacciones" class="text-xs font-bold text-blush-400 uppercase tracking-wider">0 movimientos</span>
           <button onclick="pedirConfirmacionBorrarMes()" class="text-[11px] font-bold text-rose-400 hover:text-rose-600 transition-colors">Limpiar este mes</button>
         </div>
 
-        <!-- Expense List -->
         <div id="full-expenses-list" class="space-y-2.5">
-          <!-- Dynamic transaction cards -->
         </div>
 
       </section>
 
-      <!-- ================= TAB 2: ESTADÍSTICAS ================= -->
       <section id="view-analytics" class="space-y-5 hidden">
         
         <h2 class="text-xs font-extrabold uppercase tracking-wider text-blush-400 px-1">Resumen Visual del Mes</h2>
 
-        <!-- Top Key Metric Cards -->
         <div class="grid grid-cols-2 gap-3">
           <div class="glass-card p-4 rounded-3xl space-y-1">
             <span class="text-[10px] font-bold uppercase tracking-wider text-blush-400">Mayor Capricho</span>
@@ -193,101 +175,56 @@
           </div>
         </div>
 
-        <!-- Proportional Category Bar -->
         <div class="glass-card p-5 rounded-3xl space-y-3">
           <div class="flex justify-between items-center">
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-blush-400">Proporción por Categoría</h3>
             <span id="stat-total-analytics" class="text-xs font-bold text-blush-950">0,00 €</span>
           </div>
 
-          <div id="stacked-category-bar" class="w-full h-3 rounded-full bg-blush-100 overflow-hidden flex gap-0.5 p-0.5 border border-blush-200">
-            <!-- Dynamic stacked segments -->
-          </div>
+          <div id="stacked-category-bar" class="w-full h-3 rounded-full bg-blush-100 overflow-hidden flex gap-0.5 p-0.5 border border-blush-200"></div>
         </div>
 
-        <!-- Category Breakdown List -->
         <div class="glass-card p-5 rounded-3xl space-y-4">
           <h3 class="text-xs font-extrabold uppercase tracking-wider text-blush-400">Desglose Detallado</h3>
-          <div id="category-breakdown-list" class="space-y-3">
-            <!-- Dynamic items -->
-          </div>
+          <div id="category-breakdown-list" class="space-y-3"></div>
         </div>
 
       </section>
 
-      <!-- ================= TAB 3: BANCO SYNC ================= -->
       <section id="view-sync" class="space-y-5 hidden">
         
-        <!-- Status Card -->
         <div class="glass-card p-4 rounded-3xl flex items-center justify-between border-blush-200 bg-white/90">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🤖</div>
+            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🐘</div>
             <div>
-              <p class="text-xs font-extrabold text-blush-950">Gemini AI Serverless Activo</p>
-              <p class="text-[10px] text-blush-400 font-medium">Usando variable GEMINI_API_KEY en Vercel</p>
+              <p class="text-xs font-extrabold text-blush-950">Vercel Postgres Conectado</p>
+              <p class="text-[10px] text-blush-400 font-medium">Sincronización directa mediante SQL</p>
             </div>
           </div>
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
         </div>
 
-        <!-- Interactive Simulator Input Box -->
         <div class="glass-card p-5 rounded-3xl space-y-3 bg-gradient-to-br from-white via-pink-50/30 to-amber-50/20 border-blush-200">
           <div class="flex items-center gap-2">
             <span class="text-2xl">⚡</span>
             <div>
-              <h2 class="text-sm font-extrabold text-blush-950">Simulador de Notificaciones</h2>
-              <p class="text-[11px] font-medium text-blush-400">Prueba el análisis automático en vivo</p>
+              <h2 class="text-sm font-extrabold text-blush-950">Probar Notificación Bancaria</h2>
+              <p class="text-[11px] font-medium text-blush-400">Analiza texto e inserta directamente en Postgres</p>
             </div>
           </div>
 
           <div class="space-y-2 pt-1">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-blush-400">Texto recibido del Banco</label>
             <textarea id="sim-input" rows="2" placeholder="Ej: Pago de 24,90 € con tarjeta en SEPHORA MADRID" class="w-full bg-white border border-blush-200 rounded-2xl p-3 text-xs text-blush-950 outline-none focus:ring-2 focus:ring-blush-300 resize-none shadow-xs"></textarea>
             
             <div class="flex gap-1.5 flex-wrap">
               <button onclick="setEjemploSim('Pago de 45,90 € en ZARA')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">🛍️ Zara 45,90€</button>
               <button onclick="setEjemploSim('Pago de 5,80 € con tarjeta en STARBUCKS')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">☕ Starbucks 5,80€</button>
               <button onclick="setEjemploSim('Compra de 89,00 EUR en SEPHORA')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">💅 Sephora 89,00€</button>
-              <button onclick="setEjemploSim('Pago bizum de 12,50 € en UBER')" class="text-[10px] font-bold bg-white border border-blush-200 px-2.5 py-1 rounded-full text-blush-800 hover:bg-blush-50">🚕 Uber 12,50€</button>
             </div>
 
             <button onclick="ejecutarSimulacion()" class="w-full py-2.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-sm hover:opacity-95 transition-all text-xs flex items-center justify-center gap-1.5 mt-2">
-              <span>🚀</span> Analizar Notificación
+              <span>🚀</span> Analizar y Guardar
             </button>
-          </div>
-        </div>
-
-        <!-- Setup Instructions Guide -->
-        <div class="glass-card p-5 rounded-3xl space-y-4">
-          <h2 class="text-xs font-extrabold uppercase tracking-wider text-blush-400">Guía de Configuración iOS (Atajos)</h2>
-          
-          <div class="space-y-3 text-xs">
-            <div class="flex gap-3 items-start">
-              <span class="w-6 h-6 rounded-full bg-blush-100 text-blush-800 font-extrabold flex items-center justify-center text-xs shrink-0">1</span>
-              <div>
-                <p class="font-bold text-blush-950">Abre la app Atajos de tu iPhone</p>
-                <p class="text-[11px] text-blush-500">Ve a <b>Automatización</b> y crea una nueva tocando el botón <b>+</b>.</p>
-              </div>
-            </div>
-
-            <div class="flex gap-3 items-start">
-              <span class="w-6 h-6 rounded-full bg-blush-100 text-blush-800 font-extrabold flex items-center justify-center text-xs shrink-0">2</span>
-              <div>
-                <p class="font-bold text-blush-950">Elige Notificación</p>
-                <p class="text-[11px] text-blush-500">Selecciona la app de tu banco y marca <b>Ejecutar Inmediatamente</b>.</p>
-              </div>
-            </div>
-
-            <div class="flex gap-3 items-start">
-              <span class="w-6 h-6 rounded-full bg-blush-100 text-blush-800 font-extrabold flex items-center justify-center text-xs shrink-0">3</span>
-              <div>
-                <p class="font-bold text-blush-950">Añade Acción "Abrir URL"</p>
-                <p class="text-[11px] text-blush-500">Pon el enlace de tu web incluyendo la variable de la notificación:</p>
-                <div class="bg-slate-900 text-pink-300 p-2.5 rounded-xl font-mono text-[10px] break-all my-1.5 select-all border border-slate-800">
-                  https://tu-app-eurovic.vercel.app/?notificacion=[Texto_Notificacion]
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -295,7 +232,6 @@
 
     </main>
 
-    <!-- Fixed iOS Bottom Navigation Bar -->
     <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md bg-white/90 backdrop-blur-xl border border-blush-200/70 shadow-xl shadow-blush-900/10 rounded-full p-1.5 flex justify-around items-center z-40">
       <button onclick="cambiarTab('gastos')" id="nav-gastos" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 active-tab transition-all">
         <span class="text-base">🛍️</span>
@@ -307,13 +243,12 @@
       </button>
       <button onclick="cambiarTab('sync')" id="nav-sync" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
         <span class="text-base">⚡</span>
-        <span>Banco Sync</span>
+        <span>Estado</span>
       </button>
     </nav>
 
-    <!-- Modal: Añadir Gasto Manual -->
     <div id="modal-nuevo" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm border border-blush-100 shadow-2xl space-y-4 animate-in slide-in-from-bottom duration-300">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm border border-blush-100 shadow-2xl space-y-4">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-extrabold text-blush-950">Añadir Compra Manual ✨</h3>
           <button onclick="cerrarModalNuevoGasto()" class="text-blush-400 hover:text-blush-950 text-2xl font-bold p-1">&times;</button>
@@ -343,18 +278,17 @@
           </div>
 
           <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-md hover:opacity-95 transition-all text-xs pt-3 mt-2">
-            Guardar Compra 💖
+            Guardar en Postgres 🐘
           </button>
         </form>
       </div>
     </div>
 
-    <!-- Custom Delete Confirmation Modal -->
     <div id="modal-confirm" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
       <div class="bg-white rounded-3xl p-6 w-full max-w-xs border border-blush-100 shadow-2xl text-center space-y-4">
         <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center text-xl mx-auto">🗑️</div>
         <h3 id="modal-confirm-title" class="text-sm font-extrabold text-blush-950">¿Eliminar estos gastos?</h3>
-        <p id="modal-confirm-msg" class="text-xs text-blush-400">Esta acción borrará los datos del mes seleccionado.</p>
+        <p id="modal-confirm-msg" class="text-xs text-blush-400">Esta acción borrará el registro de la base de datos Postgres.</p>
         <div class="flex gap-2 pt-1">
           <button onclick="cerrarModalConfirm()" class="flex-1 py-2.5 rounded-xl border border-blush-200 text-xs font-bold text-blush-500 hover:bg-blush-50">Cancelar</button>
           <button id="btn-confirm-action" class="flex-1 py-2.5 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 shadow-sm">Borrar</button>
@@ -374,15 +308,23 @@
       'Varios': { emoji: '✨', bg: 'bg-emerald-100', text: 'text-emerald-800', color: '#10B981' }
     };
 
+    let todosLosGastos = [];
     let mesSeleccionado = '';
     let categoriaFiltroSeleccionada = 'Todas';
 
-    function obtenerTodosLosGastos() {
-      return JSON.parse(localStorage.getItem('eurovic_gastos') || '[]');
-    }
-
-    function guardarGastosEnStorage(gastos) {
-      localStorage.setItem('eurovic_gastos', JSON.stringify(gastos));
+    async function cargarGastosDesdeServidor() {
+      try {
+        const res = await fetch('/api/gastos');
+        if (res.ok) {
+          const data = await res.json();
+          todosLosGastos = data.map(g => ({
+            ...g,
+            monto: parseFloat(g.monto) || 0
+          }));
+        }
+      } catch (err) {
+        console.error('Error cargando gastos:', err);
+      }
     }
 
     function formatearFecha(fechaStr) {
@@ -406,15 +348,12 @@
     }
 
     window.onload = async function() {
-      if (!localStorage.getItem('eurovic_gastos')) {
-        guardarGastosEnStorage([]);
-      }
+      await cargarGastosDesdeServidor();
       await procesarParametrosURL();
       poblarFiltroMeses();
       renderizarTodo();
     };
 
-    // Petición a la Vercel Serverless Function (/api/analyze)
     async function solicitarAnalisisServerless(textoNotificacion) {
       try {
         const response = await fetch('/api/analyze', {
@@ -429,7 +368,6 @@
         const catFinal = CATEGORIAS_CONFIG[parsed.categoria] ? parsed.categoria : 'Varios';
 
         return {
-          id: Date.now(),
           comercio: parsed.comercio || 'Pago con Tarjeta',
           monto: parseFloat(parsed.monto) || 0,
           categoria: catFinal,
@@ -437,8 +375,7 @@
           fecha: new Date().toISOString()
         };
       } catch (err) {
-        console.error('Error invocando Serverless Function:', err);
-        mostrarToast('Error al conectar con la IA de Vercel', '⚠️');
+        mostrarToast('Error analizando texto', '⚠️');
         return null;
       }
     }
@@ -448,14 +385,17 @@
       const notiParam = urlParams.get('notificacion');
 
       if (notiParam) {
-        mostrarToast('Analizando con Gemini AI... ✨', '🤖');
+        mostrarToast('Analizando compra... ✨', '🤖');
         const gastoCreado = await solicitarAnalisisServerless(decodeURIComponent(notiParam));
 
         if (gastoCreado && gastoCreado.monto > 0) {
-          const gastos = obtenerTodosLosGastos();
-          gastos.unshift(gastoCreado);
-          guardarGastosEnStorage(gastos);
+          await fetch('/api/gastos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(gastoCreado)
+          });
 
+          await cargarGastosDesdeServidor();
           mostrarToast(`Añadido: ${gastoCreado.comercio} (${gastoCreado.monto.toFixed(2)}€)`, gastoCreado.emoji);
           window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -466,29 +406,32 @@
       const txt = document.getElementById('sim-input').value;
       if (!txt.trim()) return;
 
-      mostrarToast('Analizando con Gemini AI... ✨', '🤖');
+      mostrarToast('Analizando gasto... ✨', '🤖');
       const gasto = await solicitarAnalisisServerless(txt);
 
       if (gasto && gasto.monto > 0) {
-        const gastos = obtenerTodosLosGastos();
-        gastos.unshift(gasto);
-        guardarGastosEnStorage(gastos);
+        await fetch('/api/gastos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gasto)
+        });
 
+        await cargarGastosDesdeServidor();
         poblarFiltroMeses();
         renderizarTodo();
 
-        mostrarToast(`¡Registrado! ${gasto.comercio} (-${gasto.monto.toFixed(2)}€)`, gasto.emoji);
+        mostrarToast(`¡Guardado! ${gasto.comercio} (-${gasto.monto.toFixed(2)}€)`, gasto.emoji);
+        document.getElementById('sim-input').value = '';
         cambiarTab('gastos');
       }
     }
 
     function poblarFiltroMeses() {
-      const gastos = obtenerTodosLosGastos();
       const mesesSet = new Set();
       const mesActualKey = new Date().toISOString().slice(0, 7);
       mesesSet.add(mesActualKey);
 
-      gastos.forEach(g => mesesSet.add(obtenerClaveMes(g.fecha)));
+      todosLosGastos.forEach(g => mesesSet.add(obtenerClaveMes(g.fecha)));
 
       const mesesOrdenados = Array.from(mesesSet).sort().reverse();
       const selectHTML = mesesOrdenados.map(m => `
@@ -505,24 +448,23 @@
     }
 
     function renderizarTodo() {
-      const todos = obtenerTodosLosGastos();
-      const gastosDelMes = todos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
+      const gastosDelMes = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
       const totalMes = gastosDelMes.reduce((acc, g) => acc + g.monto, 0);
 
       document.getElementById('total-gastado').innerText = totalMes.toFixed(2).replace('.', ',') + ' €';
       document.getElementById('txt-resumen-compras').innerText = `${gastosDelMes.length} compras registradas`;
 
-      renderizarComparativaMesAnterior(todos, totalMes);
+      renderizarComparativaMesAnterior(totalMes);
       renderizarListaTransacciones(gastosDelMes);
       renderizarEstadisticas(gastosDelMes);
     }
 
-    function renderizarComparativaMesAnterior(todos, totalActual) {
+    function renderizarComparativaMesAnterior(totalActual) {
       const [year, month] = mesSeleccionado.split('-').map(Number);
       const fechaPrevio = new Date(year, month - 2, 1);
       const clavePrevio = fechaPrevio.toISOString().slice(0, 7);
 
-      const gastosPrevios = todos.filter(g => obtenerClaveMes(g.fecha) === clavePrevio);
+      const gastosPrevios = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === clavePrevio);
       const totalPrevio = gastosPrevios.reduce((acc, g) => acc + g.monto, 0);
 
       const badge = document.getElementById('badge-comparativa');
@@ -555,7 +497,7 @@
       `).join('');
 
       if (filtrados.length === 0) {
-        container.innerHTML = '<div class="text-center py-10 text-xs text-blush-300 font-semibold">No hay compras registradas en este período ✨</div>';
+        container.innerHTML = '<div class="text-center py-10 text-xs text-blush-300 font-semibold">No hay compras registradas ✨</div>';
         return;
       }
 
@@ -565,7 +507,7 @@
     function crearHTMLGastoItem(g) {
       const conf = CATEGORIAS_CONFIG[g.categoria] || CATEGORIAS_CONFIG['Varios'];
       return `
-        <div class="bg-white p-3.5 rounded-2xl border border-blush-100/80 shadow-xs flex justify-between items-center group transition-all hover:border-blush-300">
+        <div class="bg-white p-3.5 rounded-2xl border border-blush-100/80 shadow-xs flex justify-between items-center transition-all hover:border-blush-300">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl ${conf.bg} flex items-center justify-center text-xl shrink-0">
               ${g.emoji || conf.emoji}
@@ -600,13 +542,13 @@
         document.getElementById('stat-ticket-medio').innerText = '0,00 €';
         document.getElementById('stat-num-compras').innerText = '0';
         document.getElementById('stacked-category-bar').innerHTML = '<div class="w-full h-full bg-blush-100 rounded-full"></div>';
-        document.getElementById('category-breakdown-list').innerHTML = '<p class="text-xs text-blush-300 text-center py-4">Sin compras registradas este mes ✨</p>';
+        document.getElementById('category-breakdown-list').innerHTML = '<p class="text-xs text-blush-300 text-center py-4">Sin compras registradas ✨</p>';
         return;
       }
 
       const mayor = [...gastosMes].sort((a,b) => b.monto - a.monto)[0];
       document.getElementById('stat-mayor-capricho').innerText = `${mayor.monto.toFixed(2)} €`;
-      document.getElementById('stat-mayor-capricho-sub').innerText = `${mayor.emoji} ${mayor.comercio}`;
+      document.getElementById('stat-mayor-capricho-sub').innerText = `${mayor.emoji || '🛍️'} ${mayor.comercio}`;
 
       const totalsByCat = {};
       gastosMes.forEach(g => {
@@ -661,8 +603,7 @@
     }
 
     function filtrarTransacciones() {
-      const todos = obtenerTodosLosGastos();
-      const gastosMes = todos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
+      const gastosMes = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) === mesSeleccionado);
       renderizarListaTransacciones(gastosMes);
     }
 
@@ -674,11 +615,11 @@
 
     function pedirConfirmacionBorrarUno(id) {
       document.getElementById('modal-confirm-title').innerText = '¿Borrar esta compra?';
-      document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente.';
-      accionBorradoPendiente = () => {
-        let gastos = obtenerTodosLosGastos();
-        gastos = gastos.filter(g => g.id !== id);
-        guardarGastosEnStorage(gastos);
+      document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente de Postgres.';
+      accionBorradoPendiente = async () => {
+        await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
+        await cargarGastosDesdeServidor();
+        poblarFiltroMeses();
         renderizarTodo();
         mostrarToast('Compra eliminada', '🗑️');
       };
@@ -687,20 +628,19 @@
 
     function pedirConfirmacionBorrarMes() {
       document.getElementById('modal-confirm-title').innerText = `¿Limpiar ${obtenerNombreMesLegible(mesSeleccionado)}?`;
-      document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras registradas en este mes.';
-      accionBorradoPendiente = () => {
-        let gastos = obtenerTodosLosGastos();
-        gastos = gastos.filter(g => obtenerClaveMes(g.fecha) !== mesSeleccionado);
-        guardarGastosEnStorage(gastos);
+      document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras de este mes en Postgres.';
+      accionBorradoPendiente = async () => {
+        await fetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
+        await cargarGastosDesdeServidor();
         poblarFiltroMeses();
         renderizarTodo();
-        mostrarToast('Mes limpiado correctamente', '✨');
+        mostrarToast('Mes limpiado', '✨');
       };
       document.getElementById('modal-confirm').classList.remove('hidden');
     }
 
-    document.getElementById('btn-confirm-action').onclick = function() {
-      if (accionBorradoPendiente) accionBorradoPendiente();
+    document.getElementById('btn-confirm-action').onclick = async function() {
+      if (accionBorradoPendiente) await accionBorradoPendiente();
       cerrarModalConfirm();
     };
 
@@ -730,14 +670,13 @@
       document.getElementById('modal-nuevo').classList.add('hidden');
     }
 
-    function guardarGastoManual(e) {
+    async function guardarGastoManual(e) {
       e.preventDefault();
       const comercio = document.getElementById('manual-comercio').value;
       const monto = parseFloat(document.getElementById('manual-monto').value);
       const categoria = document.getElementById('manual-categoria').value;
 
       const nuevoGasto = {
-        id: Date.now(),
         comercio,
         monto,
         categoria,
@@ -745,17 +684,20 @@
         fecha: new Date().toISOString()
       };
 
-      const gastos = obtenerTodosLosGastos();
-      gastos.unshift(nuevoGasto);
-      guardarGastosEnStorage(gastos);
+      await fetch('/api/gastos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nuevoGasto)
+      });
 
       cerrarModalNuevoGasto();
       document.getElementById('manual-comercio').value = '';
       document.getElementById('manual-monto').value = '';
 
+      await cargarGastosDesdeServidor();
       poblarFiltroMeses();
       renderizarTodo();
-      mostrarToast(`Añadido manual: ${comercio}`, nuevoGasto.emoji);
+      mostrarToast(`Añadido a Postgres: ${comercio}`, nuevoGasto.emoji);
     }
 
     function mostrarToast(mensaje, emoji = '✨') {
