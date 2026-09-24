@@ -141,7 +141,7 @@ Reglas:
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'meta-llama/llama-prompt-guard-2-22m',
+      model: 'openai/gpt-oss-120b',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Analiza esta notificación o texto: "${texto}"` }
