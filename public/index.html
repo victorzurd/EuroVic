@@ -82,8 +82,8 @@
 
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm pointer-events-none flex flex-col gap-2"></div>
 
-  <!-- Aumentado el padding inferior a pb-36 -->
-  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-36 relative shadow-2xl bg-[#FAF5F0]">
+  <!-- Aumentado el padding inferior del contenedor principal a pb-52 -->
+  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-52 relative shadow-2xl bg-[#FAF5F0]">
 
     <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#FAF5F0]/90 backdrop-blur-md z-30 border-b border-blush-100/50">
       <div>
@@ -103,8 +103,8 @@
       </div>
     </header>
 
-    <!-- Añadido pb-16 al main para asegurar que ningún elemento quede tapado por el nav -->
-    <main class="px-5 space-y-6 flex-1 pt-3 pb-16">
+    <!-- Aumentado el padding inferior a pb-28 para margen extra -->
+    <main class="px-5 space-y-6 flex-1 pt-3 pb-28">
 
       <section id="view-gastos" class="space-y-5">
 
@@ -333,7 +333,6 @@
             monto: parseFloat(g.monto) || 0
           }));
 
-          // Notificar si se detectan nuevos gastos en segundo plano
           if (primerCargado && silencioso) {
             const idsExistentes = new Set(todosLosGastos.map(g => g.id));
             const gastosDetectados = nuevosGastos.filter(g => !idsExistentes.has(g.id));
@@ -343,7 +342,6 @@
             });
           }
 
-          // Verificar si ha habido cambios en los datos antes de volver a renderizar
           const datosHanCambiado = JSON.stringify(nuevosGastos) !== JSON.stringify(todosLosGastos);
 
           if (datosHanCambiado || !primerCargado) {
@@ -359,7 +357,6 @@
       }
     }
 
-    // Actualización directa e instantánea en el cliente sin re-fetch masivo
     function agregarGastoLocalmente(gasto) {
       const gastoFormateado = {
         ...gasto,
@@ -397,7 +394,6 @@
       poblarFiltroMeses();
       renderizarTodo();
 
-      // Sincronización en tiempo real / Polling automático cada 4 segundos
       setInterval(() => {
         cargarGastosDesdeServidor(true);
       }, 4000);
