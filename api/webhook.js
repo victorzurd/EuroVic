@@ -109,12 +109,12 @@ async function analizarGastoConGroq(texto) {
   const url = 'https://api.groq.com/openai/v1/chat/completions';
 
   const systemPrompt = `Eres un asistente especializado en extraer información estructurada de notificaciones de gastos bancarios.
-Debes devolver ÚNICAMENTE un objeto JSON válido (sin bloques de formato Markdown, sin texto adicional ni explicaciones).
+Debes devolver ÚNICAMENTE un objeto JSON válido, sin bloques de formato Markdown (NO uses \`\`\`json ni \`\`\`), sin introducciones ni texto adicional.
 
-Esquema JSON estricto:
+Esquema JSON obligatorio:
 {
-  "comercio": "Nombre del establecimiento o comercio (Ej: Mercadona, Repsol, Zara)",
-  "monto": número_decimal,
+  "comercio": "Nombre del establecimiento o comercio",
+  "monto": 0.0,
   "categoria": "Una categoría de la lista permitida",
   "emoji": "El emoji de la categoría seleccionada"
 }
@@ -131,7 +131,7 @@ Las ÚNICAS categorías permitidas y sus emojis asociados son:
 - Varios (✨)
 
 Reglas:
-1. "monto" debe ser solo un número flotante (ej: 12.50, no agregues el símbolo de moneda).
+1. "monto" debe ser estrictamente un número flotante/decimal (ejemplo: 12.50).
 2. Si la categoría no coincide claramente con ninguna, asigna "Varios" y "✨".`;
 
   const response = await fetch(url, {
@@ -141,12 +141,11 @@ Reglas:
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'meta-llama/llama-prompt-guard-2-22m', // El modelo más potente y preciso de Groq (Gratuito)
+      model: 'meta-llama/llama-prompt-guard-2-22m',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Analiza esta notificación o texto: "${texto}"` }
       ],
-      response_format: { type: 'json_object' }, // Fuerza a Groq a responder en JSON estructurado
       temperature: 0.1
     })
   });
@@ -157,11 +156,14 @@ Reglas:
   }
 
   const data = await response.json();
-  const resultText = data.choices?.[0]?.message?.content;
+  let resultText = data.choices?.[0]?.message?.content;
 
   if (!resultText) {
     throw new Error('Groq API devolvió una respuesta vacía.');
   }
+
+  // Limpieza de seguridad por si el modelo incluye comillas o etiquetas markdown ```json
+  resultText = resultText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
   return JSON.parse(resultText);
 }
