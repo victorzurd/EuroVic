@@ -120,22 +120,22 @@ Esquema JSON obligatorio:
   "emoji": "El emoji de la categoría seleccionada"
 }
 
-Las ÚNICAS categorías permitidas y sus emojis asociados son:
-- Shopping (🛍️)
-- Self Care (💅)
-- Brunch & Desayunos (🥐)
-- Cenas & Copas (🍷)
-- Fiesta & Eventos (🎉)
-- Ocio (🎟️)
-- Supermercado (🛒)
-- Escapadas (✈️)
-- Movilidad (🚗)
-- Varios (✨)
+Las ÚNICAS categorías permitidas, sus emojis y ejemplos de uso son:
+- Shopping (🛍️): ropa, moda, tecnología, tiendas online, regalos.
+- Self Care (💅): estética, peluquería, farmacia, cosmética, spa, masajes.
+- Brunch & Desayunos (🥐): cafeterías, desayunos, panaderías.
+- Cenas & Copas (🍷): restaurantes, cenas, bares, comidas.
+- Fiesta & Eventos (🎉): discotecas, festivales, entradas de fiestas, bodas.
+- Ocio (🎟️): escape rooms, cine, teatro, conciertos, museos, boleras, videojuegos, parques de atracciones, ocio nocturno/diurno activo.
+- Supermercado (🛒): alimentación, super, supermercados, compra semanal.
+- Escapadas (✈️): hoteles, vuelos, trenes, viajes, alojamientos, Airbnb.
+- Movilidad (🚗): taxi, Uber, Cabify, gasolina, peajes, parking, metro, bus.
+- Varios (✨): otros gastos que no encajen claramente en las anteriores.
 
 Reglas:
 1. "monto" debe ser estrictamente un número flotante/decimal (ejemplo: 12.50).
-2. Si la categoría no coincide claramente con ninguna, asigna "Varios" y "✨".`;
-
+2. "Ocio" abarca explícitamente cualquier juego de escape (Escape Room), entrada de cine, teatro o actividad cultural/recreativa.
+3. Si la categoría no coincide claramente con ninguna, asigna "Varios" y "✨".`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
