@@ -273,6 +273,7 @@
               <option value="Brunch & Desayunos">🥐 Brunch & Desayunos</option>
               <option value="Cenas & Copas">🍷 Cenas & Copas</option>
               <option value="Fiesta & Eventos">🎉 Fiesta & Eventos</option>
+              <option value="Ocio">🎟️ Ocio</option>
               <option value="Supermercado">🛒 Supermercado</option>
               <option value="Escapadas">✈️ Escapadas</option>
               <option value="Movilidad">🚗 Movilidad</option>
@@ -308,6 +309,7 @@
       'Brunch & Desayunos': { emoji: '🥐', bg: 'bg-amber-100', text: 'text-amber-800', color: '#F59E0B' },
       'Cenas & Copas': { emoji: '🍷', bg: 'bg-rose-100', text: 'text-rose-800', color: '#E11D48' },
       'Fiesta & Eventos': { emoji: '🎉', bg: 'bg-fuchsia-100', text: 'text-fuchsia-800', color: '#D946EF' },
+      'Ocio': { emoji: '🎟️', bg: 'bg-indigo-100', text: 'text-indigo-800', color: '#6366F1' },
       'Supermercado': { emoji: '🛒', bg: 'bg-emerald-100', text: 'text-emerald-800', color: '#10B981' },
       'Escapadas': { emoji: '✈️', bg: 'bg-sky-100', text: 'text-sky-800', color: '#0EA5E9' },
       'Movilidad': { emoji: '🚗', bg: 'bg-blue-100', text: 'text-blue-800', color: '#3B82F6' },
@@ -317,16 +319,38 @@
     let todosLosGastos = [];
     let mesSeleccionado = '';
     let categoriaFiltroSeleccionada = 'Todas';
+    let primerCargado = false;
 
-    async function cargarGastosDesdeServidor() {
+    async function cargarGastosDesdeServidor(silencioso = false) {
       try {
         const res = await fetch('/api/gastos');
         if (res.ok) {
           const data = await res.json();
-          todosLosGastos = data.map(g => ({
+          const nuevosGastos = data.map(g => ({
             ...g,
             monto: parseFloat(g.monto) || 0
           }));
+
+          // Notificar si se detectan nuevos gastos en segundo plano
+          if (primerCargado && silencioso) {
+            const idsExistentes = new Set(todosLosGastos.map(g => g.id));
+            const gastosDetectados = nuevosGastos.filter(g => !idsExistentes.has(g.id));
+            
+            gastosDetectados.forEach(gasto => {
+              mostrarToast(`Nuevo gasto: ${gasto.comercio} (-${gasto.monto.toFixed(2)}€)`, gasto.emoji || '✨');
+            });
+          }
+
+          // Verificar si ha habido cambios en los datos antes de volver a renderizar
+          const datosHanCambiado = JSON.stringify(nuevosGastos) !== JSON.stringify(todosLosGastos);
+
+          if (datosHanCambiado || !primerCargado) {
+            todosLosGastos = nuevosGastos;
+            poblarFiltroMeses();
+            renderizarTodo();
+          }
+
+          primerCargado = true;
         }
       } catch (err) {
         console.error('Error cargando gastos:', err);
@@ -370,6 +394,11 @@
       await procesarParametrosURL();
       poblarFiltroMeses();
       renderizarTodo();
+
+      // Sincronización en tiempo real / Polling automático cada 4 segundos
+      setInterval(() => {
+        cargarGastosDesdeServidor(true);
+      }, 4000);
     };
 
     async function solicitarAnalisisServerless(textoNotificacion) {

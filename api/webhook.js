@@ -19,6 +19,7 @@ const CATEGORIAS_VALIDAS = {
   'Brunch & Desayunos': '🥐',
   'Cenas & Copas': '🍷',
   'Fiesta & Eventos': '🎉',
+  'Ocio': '🎟️',
   'Supermercado': '🛒',
   'Escapadas': '✈️',
   'Movilidad': '🚗',
@@ -125,6 +126,7 @@ Las ÚNICAS categorías permitidas y sus emojis asociados son:
 - Brunch & Desayunos (🥐)
 - Cenas & Copas (🍷)
 - Fiesta & Eventos (🎉)
+- Ocio (🎟️)
 - Supermercado (🛒)
 - Escapadas (✈️)
 - Movilidad (🚗)
