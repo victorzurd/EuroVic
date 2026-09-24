@@ -141,7 +141,7 @@ Reglas:
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant', // El modelo más potente y preciso de Groq (Gratuito)
+      model: 'meta-llama/llama-prompt-guard-2-22m', // El modelo más potente y preciso de Groq (Gratuito)
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Analiza esta notificación o texto: "${texto}"` }
