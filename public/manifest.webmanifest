@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "Eurovic — Tus cuentas, en orden",
+  "short_name": "Eurovic",
+  "description": "Tus gastos del mes, organizados con estilo.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8F4EF",
+  "theme_color": "#6E3044",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

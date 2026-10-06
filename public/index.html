@@ -1,18 +1,22 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-[#FAF5F0]">
+<html lang="es" class="h-full bg-[#F8F4EF]">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Eurovic | Expense Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eurovic — Tus cuentas, en orden</title>
+  <meta name="theme-color" content="#6E3044">
+  <meta name="description" content="Tus gastos del mes, organizados con estilo. Eurovic te ayuda a llevar tus cuentas al día.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Eurovic">
-  <link rel="apple-touch-icon" href="https://placehold.co/180x180/FBCFE8/831843?text=Eurovic">
+  <link rel="apple-touch-icon" href="/icon.svg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
 
   <script>
@@ -21,19 +25,20 @@
         extend: {
           fontFamily: {
             sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
           },
           colors: {
-            cream: '#FAF5F0',
+            cream: '#F8F4EF',
             blush: {
-              50: '#FFF5F7',
-              100: '#FDE8ED',
-              200: '#FBCFE8',
-              300: '#F4A8C4',
-              400: '#E879A8',
-              500: '#DB4D88',
-              800: '#831843',
-              900: '#500724',
-              950: '#300213',
+              50: '#FAF6F3',
+              100: '#F0E5E1',
+              200: '#E3CBC7',
+              300: '#CFA9A7',
+              400: '#B57983',
+              500: '#99596A',
+              800: '#653847',
+              900: '#482634',
+              950: '#2D1A21',
             },
             gold: {
               300: '#FDE047',
@@ -54,17 +59,19 @@
       -webkit-tap-highlight-color: transparent; 
     }
     
+    body { background: #f8f4ef; }
     .glass-card {
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(251, 207, 232, 0.45);
+      border: 1px solid rgba(190, 157, 130, 0.22);
+      box-shadow: 0 12px 32px rgba(76, 43, 45, 0.045);
     }
 
     .active-tab {
       background: #FFFFFF;
-      color: #300213;
-      box-shadow: 0 4px 14px rgba(232, 121, 168, 0.2);
+      color: #2D1A21;
+      box-shadow: 0 4px 14px rgba(139, 78, 94, 0.14);
     }
 
     @keyframes toastSlide {
@@ -75,23 +82,29 @@
     .animate-toast-in {
       animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
   </style>
 </head>
 
-<body class="h-full bg-[#FAF5F0] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
+<body class="h-full bg-[#F8F4EF] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
 
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm pointer-events-none flex flex-col gap-2"></div>
 
   <!-- Aumentado el padding inferior del contenedor principal a pb-52 -->
-  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-52 relative shadow-2xl bg-[#FAF5F0]">
+  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-52 relative shadow-2xl bg-[#F8F4EF]">
 
-    <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#FAF5F0]/90 backdrop-blur-md z-30 border-b border-blush-100/50">
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-extrabold tracking-tight text-blush-950">Eurovic</h1>
-          <span class="inline-block w-2.5 h-2.5 rounded-full bg-gold-400 animate-pulse shadow-sm"></span>
+    <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#F8F4EF]/90 backdrop-blur-md z-30 border-b border-blush-100/50">
+      <div class="flex items-center gap-3">
+        <img src="/icon.svg" alt="" class="w-11 h-11 rounded-2xl shadow-sm">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-serif text-[1.9rem] font-bold leading-none tracking-tight text-blush-950">Eurovic</h1>
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#B58B52] shadow-sm"></span>
+          </div>
+          <p class="text-[10px] font-bold text-blush-400 tracking-[0.16em] uppercase">Tus cuentas, en orden</p>
         </div>
-        <p class="text-[10px] font-bold text-blush-400 tracking-wider uppercase">Clean girl expenses</p>
       </div>
 
       <div class="flex items-center gap-2">
@@ -112,7 +125,7 @@
           <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/40 blur-2xl pointer-events-none"></div>
 
           <div class="flex justify-between items-start mb-1">
-            <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Total Gastado Este Mes</span>
+            <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Este mes has gastado</span>
             <span id="badge-comparativa" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/80 text-blush-900 border border-blush-200 shadow-xs">
               Cargando...
             </span>
@@ -124,7 +137,7 @@
 
           <div class="flex justify-between items-center text-xs text-blush-800 font-semibold pt-2 border-t border-blush-200/60">
             <span id="txt-resumen-compras">0 compras registradas</span>
-            <span class="text-[11px] text-blush-400 font-medium">🐘 Vercel Postgres</span>
+            <span class="text-[11px] text-blush-400 font-medium">Todo bajo control ✨</span>
           </div>
         </div>
 
@@ -199,8 +212,8 @@
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🐘</div>
             <div>
-              <p class="text-xs font-extrabold text-blush-950">Vercel Postgres Conectado</p>
-              <p class="text-[10px] text-blush-400 font-medium">Sincronización directa mediante SQL</p>
+              <p class="text-xs font-extrabold text-blush-950">Sincronización activa</p>
+              <p class="text-[10px] text-blush-400 font-medium">Tus movimientos están al día</p>
             </div>
           </div>
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
@@ -211,7 +224,7 @@
             <span class="text-2xl">⚡</span>
             <div>
               <h2 class="text-sm font-extrabold text-blush-950">Probar Notificación Bancaria</h2>
-              <p class="text-[11px] font-medium text-blush-400">Analiza texto e inserta directamente en Postgres</p>
+              <p class="text-[11px] font-medium text-blush-400">Convierte un aviso del banco en un gasto</p>
             </div>
           </div>
 
@@ -284,7 +297,7 @@
           </div>
 
           <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-md hover:opacity-95 transition-all text-xs pt-3 mt-2">
-            Guardar en Postgres 🐘
+            Guardar compra ✨
           </button>
         </form>
       </div>
@@ -305,6 +318,12 @@
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(error => {
+        console.warn('No se pudo preparar Eurovic para uso sin conexión:', error);
+      }));
+    }
+
     const CATEGORIAS_CONFIG = {
       'Shopping': { emoji: '🛍️', bg: 'bg-pink-100', text: 'text-pink-800', color: '#E879A8' },
       'Self Care': { emoji: '💅', bg: 'bg-purple-100', text: 'text-purple-800', color: '#A855F7' },
