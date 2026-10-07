@@ -150,20 +150,33 @@ No se incluye ningún fichero `.env` ni `.env.example` en el repositorio. Estas 
 | :--- | :--- | :--- | :--- |
 | `POSTGRES_SUPABASE_URL` | `api/gastos.js`, `api/webhook.js` | Sí | URL del proyecto de Supabase. |
 | `POSTGRES_SUPABASE_SERVICE_ROLE_KEY` | `api/gastos.js`, `api/webhook.js` | Sí | Clave `service_role` de Supabase (con permisos de escritura completos; **no** la clave pública `anon`). |
+| `SUPABASE_ANON_KEY` | `api/config.js` | Sí | Clave pública `anon` del proyecto, entregada al navegador para Supabase Auth. Es pública; nunca pongas aquí la clave `service_role`. También se admite `POSTGRES_SUPABASE_ANON_KEY`. |
 | `GROQ_API_KEY` | `api/webhook.js` | Sí, para el flujo de captura por IA | Clave de la API de Groq usada para interpretar el texto de la notificación. |
 
 ```bash
 # .env.local (uso con `vercel dev`)
 POSTGRES_SUPABASE_URL=https://xxxxxxxx.supabase.co
 POSTGRES_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+SUPABASE_ANON_KEY=eyJhbGciOi...
 GROQ_API_KEY=gsk_...
 ```
+
+### Activar el acceso por usuario
+
+1. En Supabase, habilita **Authentication → Providers → Email** y configura la URL de Vercel como **Site URL** (y URL permitida de redirección si procede).
+2. Configura `SUPABASE_ANON_KEY` en Vercel y despliega los cambios.
+3. Crea tu cuenta desde Eurovic. Si la confirmación por correo está activa, confirma el mensaje antes de continuar.
+4. Sustituye `CAMBIA_POR_TU_CORREO` en `supabase/migrations/20261007_auth_per_user.sql` por el correo de esa cuenta y ejecuta el SQL en el SQL Editor de Supabase. Esto añade `user_id`, asigna los gastos existentes a esa cuenta, activa RLS y crea políticas por usuario.
+
+La tabla `gastos` debe tener una columna `user_id` de tipo `uuid`, con referencia a `auth.users(id)` y no nula. La migración incluida crea la columna, conserva los gastos anteriores asignándolos a la cuenta indicada y configura las políticas. Los usuarios nuevos solo verán sus propios registros.
+
+Las llamadas a `/api/gastos` y `/api/webhook` exigen un token de sesión. Por ello, cualquier integración externa que enviara notificaciones directamente al webhook también debe autenticarse con un token de usuario válido.
 
 ---
 
 ## 6. Ejemplo de uso / endpoints API
 
-Todos los endpoints devuelven JSON y tienen CORS abierto (`Access-Control-Allow-Origin: *`).
+Los endpoints de datos devuelven JSON y requieren `Authorization: Bearer <access_token>` de una sesión activa de Supabase. `/api/config` es público y solo entrega la URL y la clave pública `anon` para inicializar Supabase Auth. Las respuestas de datos se limitan al usuario autenticado.
 
 ### 6.1. `GET /api/gastos` — listar gastos
 
@@ -246,13 +259,12 @@ El texto puede llegar en cualquiera de estos campos del cuerpo: `text`, `notific
 
 ## 7. Limitaciones conocidas
 
-> ⚠️ **Importante:** los endpoints son públicos por defecto. Revisa las limitaciones de seguridad antes de usar la aplicación con datos reales.
+> La interfaz y las funciones de datos requieren una sesión válida. La autorización se comprueba en Vercel y las operaciones se filtran por usuario; la tabla también tiene políticas RLS como protección adicional.
 
 Aspectos detectados durante el análisis estático del código:
 
-- **Sin capa de autenticación**: los dos endpoints (`gastos` y `webhook`) son públicos y aceptan peticiones de cualquier origen (`Access-Control-Allow-Origin: *`); cualquiera con la URL puede leer, crear o borrar gastos.
-- **Uso de la clave `service_role` de Supabase**: al ejecutarse en funciones serverless (no en el navegador) esto es razonable, pero un error de configuración que exponga esta clave comprometería el acceso total a la base de datos, saltándose cualquier política de *Row Level Security*.
-- **Sin validación de webhook**: `/api/webhook` no verifica ninguna firma ni token, por lo que un tercero que descubra la URL puede insertar gastos falsos.
+- **Clave `service_role`**: se mantiene únicamente en funciones serverless; nunca debe configurarse como clave pública ni incluirse en el frontend.
+- **Alta de cuentas**: el formulario permite crear cuentas. Para una app privada, limita el registro en Supabase Auth o desactiva el alta abierta después de crear las cuentas necesarias.
 - **Frontend sin *build ni framework***: `public/index.html` concentra HTML, CSS (vía Tailwind CDN) y toda la lógica de la SPA en un único archivo de más de 700 líneas; no hay componentización ni *tests*.
 - **Dependencia de un servicio externo de pago**: la captura de gastos por IA requiere cuota disponible en Groq; sin `GROQ_API_KEY` configurada, `/api/webhook` responde con error 500.
 - **Sin `vercel.json`**: la configuración de rutas y funciones se apoya íntegramente en las convenciones automáticas de Vercel; cualquier necesidad de configuración avanzada (cron jobs, *rewrites*, límites de duración) requeriría añadirlo.

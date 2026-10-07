@@ -18,6 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
     tailwind.config = {
@@ -90,10 +91,27 @@
 
 <body class="h-full bg-[#F8F4EF] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
 
+  <section id="auth-screen" class="min-h-screen flex items-center justify-center p-5">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-7 space-y-5">
+      <div class="text-center space-y-2">
+        <img src="/icon.svg" alt="" class="w-14 h-14 mx-auto rounded-2xl">
+        <h1 class="font-serif text-4xl font-bold text-blush-950">Eurovic</h1>
+        <p id="auth-description" class="text-xs text-blush-500">Inicia sesión para ver tus gastos.</p>
+      </div>
+      <form id="auth-form" class="space-y-3">
+        <input id="auth-email" type="email" autocomplete="email" required placeholder="Correo electrónico" class="w-full bg-white border border-blush-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blush-300">
+        <input id="auth-password" type="password" autocomplete="current-password" required minlength="6" placeholder="Contraseña" class="w-full bg-white border border-blush-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blush-300">
+        <button id="auth-submit" type="submit" class="w-full py-3 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-md">Iniciar sesión</button>
+      </form>
+      <p id="auth-error" role="status" class="text-xs text-center text-rose-600"></p>
+      <button id="auth-toggle" type="button" class="w-full text-xs font-bold text-blush-500">¿No tienes cuenta? Crear cuenta</button>
+    </div>
+  </section>
+
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm pointer-events-none flex flex-col gap-2"></div>
 
   <!-- Aumentado el padding inferior del contenedor principal a pb-52 -->
-  <div class="max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-52 relative shadow-2xl bg-[#F8F4EF]">
+  <div id="app-content" class="hidden max-w-md w-full mx-auto min-h-full flex flex-col justify-between pb-52 relative shadow-2xl bg-[#F8F4EF]">
 
     <header class="p-5 pt-8 flex justify-between items-center sticky top-0 bg-[#F8F4EF]/90 backdrop-blur-md z-30 border-b border-blush-100/50">
       <div class="flex items-center gap-3">
@@ -108,6 +126,7 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <button onclick="cerrarSesion()" class="text-[10px] font-bold text-blush-500 px-2" title="Cerrar sesión">Salir</button>
         <select id="month-filter" onchange="cambiarMes(this.value)" class="bg-white/90 border border-blush-200 text-blush-950 text-xs font-bold py-2 px-3 rounded-full shadow-sm outline-none cursor-pointer focus:ring-2 focus:ring-blush-300 transition-all">
         </select>
         <button onclick="abrirModalNuevoGasto()" class="w-9 h-9 rounded-full bg-gradient-to-r from-blush-400 to-blush-500 text-white flex items-center justify-center font-bold shadow-md hover:opacity-90 active:scale-95 transition-all text-xl">
@@ -318,6 +337,86 @@
   </div>
 
   <script>
+    let supabaseClient;
+    let authMode = 'signin';
+    let appStarted = false;
+    let pollingTimer;
+
+    async function apiFetch(url, options = {}) {
+      const { data } = await supabaseClient.auth.getSession();
+      const headers = new Headers(options.headers || {});
+      if (data.session?.access_token) headers.set('Authorization', `Bearer ${data.session.access_token}`);
+      const response = await fetch(url, { ...options, headers });
+      if (response.status === 401) await supabaseClient.auth.signOut();
+      return response;
+    }
+
+    function mostrarAplicacion(session) {
+      const loggedIn = Boolean(session);
+      document.getElementById('auth-screen').classList.toggle('hidden', loggedIn);
+      document.getElementById('app-content').classList.toggle('hidden', !loggedIn);
+      if (loggedIn && !appStarted) iniciarAplicacion();
+      if (!loggedIn) {
+        appStarted = false;
+        clearInterval(pollingTimer);
+        todosLosGastos = [];
+        primerCargado = false;
+      }
+    }
+
+    async function iniciarAutenticacion() {
+      const response = await fetch('/api/config', { cache: 'no-store' });
+      const config = await response.json();
+      if (!response.ok) throw new Error(config.error || 'No se pudo cargar la configuración.');
+      if (!window.supabase?.createClient) throw new Error('No se pudo cargar el cliente de autenticación.');
+      supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+
+      document.getElementById('auth-toggle').addEventListener('click', () => {
+        authMode = authMode === 'signin' ? 'signup' : 'signin';
+        document.getElementById('auth-submit').textContent = authMode === 'signin' ? 'Iniciar sesión' : 'Crear cuenta';
+        document.getElementById('auth-description').textContent = authMode === 'signin' ? 'Inicia sesión para ver tus gastos.' : 'Crea tu cuenta personal de Eurovic.';
+        document.getElementById('auth-toggle').textContent = authMode === 'signin' ? '¿No tienes cuenta? Crear cuenta' : '¿Ya tienes cuenta? Iniciar sesión';
+        document.getElementById('auth-error').textContent = '';
+      });
+
+      document.getElementById('auth-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const submit = document.getElementById('auth-submit');
+        const errorLabel = document.getElementById('auth-error');
+        submit.disabled = true;
+        errorLabel.textContent = '';
+        try {
+          const email = document.getElementById('auth-email').value.trim();
+          const password = document.getElementById('auth-password').value;
+          const result = authMode === 'signin'
+            ? await supabaseClient.auth.signInWithPassword({ email, password })
+            : await supabaseClient.auth.signUp({ email, password });
+          if (result.error) throw result.error;
+          if (authMode === 'signup' && !result.data.session) {
+            errorLabel.className = 'text-xs text-center text-emerald-700';
+            errorLabel.textContent = 'Cuenta creada. Revisa tu correo para confirmar y luego inicia sesión.';
+          } else {
+            mostrarAplicacion(result.data.session);
+          }
+        } catch (error) {
+          errorLabel.className = 'text-xs text-center text-rose-600';
+          errorLabel.textContent = error.message || 'No se pudo iniciar sesión.';
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => mostrarAplicacion(session));
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      mostrarAplicacion(data.session);
+    }
+
+    async function cerrarSesion() {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) mostrarToast(error.message, '⚠️');
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(error => {
         console.warn('No se pudo preparar Eurovic para uso sin conexión:', error);
@@ -344,7 +443,7 @@
 
     async function cargarGastosDesdeServidor(silencioso = false) {
       try {
-        const res = await fetch('/api/gastos');
+        const res = await apiFetch('/api/gastos');
         if (res.ok) {
           const data = await res.json();
           const nuevosGastos = data.map(g => ({
@@ -407,16 +506,26 @@
       return `${nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1)} ${year}`;
     }
 
-    window.onload = async function() {
-      await cargarGastosDesdeServidor();
-      await procesarParametrosURL();
+    function iniciarAplicacion() {
+      if (appStarted) return;
+      appStarted = true;
+      cargarGastosDesdeServidor();
+      procesarParametrosURL();
       poblarFiltroMeses();
       renderizarTodo();
 
-      setInterval(() => {
-        cargarGastosDesdeServidor(true);
+      pollingTimer = setInterval(() => {
+        if (appStarted) cargarGastosDesdeServidor(true);
       }, 4000);
-    };
+    }
+
+    window.addEventListener('load', async function() {
+      try {
+        await iniciarAutenticacion();
+      } catch (error) {
+        document.getElementById('auth-error').textContent = error.message || 'Error al iniciar Eurovic.';
+      }
+    });
 
     async function solicitarAnalisisServerless(textoNotificacion) {
       if (!textoNotificacion || typeof textoNotificacion !== 'string' || !textoNotificacion.trim()) {
@@ -425,7 +534,7 @@
       }
 
       try {
-        const response = await fetch('/api/webhook', {
+        const response = await apiFetch('/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: textoNotificacion.trim() })
@@ -672,7 +781,7 @@
       document.getElementById('modal-confirm-title').innerText = '¿Borrar esta compra?';
       document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente de Postgres.';
       accionBorradoPendiente = async () => {
-        const res = await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
+        const res = await apiFetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
           todosLosGastos = todosLosGastos.filter(g => g.id !== id);
           poblarFiltroMeses();
@@ -687,7 +796,7 @@
       document.getElementById('modal-confirm-title').innerText = `¿Limpiar ${obtenerNombreMesLegible(mesSeleccionado)}?`;
       document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras de este mes en Postgres.';
       accionBorradoPendiente = async () => {
-        const res = await fetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
+        const res = await apiFetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
         if (res.ok) {
           todosLosGastos = todosLosGastos.filter(g => obtenerClaveMes(g.fecha) !== mesSeleccionado);
           poblarFiltroMeses();
@@ -744,7 +853,7 @@
       };
 
       try {
-        const res = await fetch('/api/gastos', {
+        const res = await apiFetch('/api/gastos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(nuevoGasto)

@@ -1,31 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.POSTGRES_SUPABASE_URL;
-const supabaseServiceKey = process.env.POSTGRES_SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Error: Faltan las variables POSTGRES_SUPABASE_URL o POSTGRES_SUPABASE_SERVICE_ROLE_KEY');
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
-  }
-});
+import { createAdminClient, requireUser } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const supabase = createAdminClient();
+
     // 1. OBTENER LISTA DE GASTOS
     if (req.method === 'GET') {
       const { month, limit } = req.query;
-      let query = supabase.from('gastos').select('*').order('fecha', { ascending: false });
+      let query = supabase.from('gastos').select('*').eq('user_id', user.id).order('fecha', { ascending: false });
 
       if (month) {
         const [yearStr, monthStr] = month.split('-');
@@ -61,6 +51,7 @@ export default async function handler(req, res) {
         .from('gastos')
         .insert([
           {
+            user_id: user.id,
             comercio,
             monto: parseFloat(monto),
             categoria: categoria || 'Varios',
@@ -83,7 +74,8 @@ export default async function handler(req, res) {
         const { error } = await supabase
           .from('gastos')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .eq('user_id', user.id);
 
         if (error) throw error;
       } else if (month) {
@@ -101,6 +93,7 @@ export default async function handler(req, res) {
         const { error } = await supabase
           .from('gastos')
           .delete()
+          .eq('user_id', user.id)
           .gte('fecha', startDate)
           .lte('fecha', endDate);
 

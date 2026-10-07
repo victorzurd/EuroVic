@@ -1,17 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.POSTGRES_SUPABASE_URL;
-  const supabaseServiceKey = process.env.POSTGRES_SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Faltan las variables POSTGRES_SUPABASE_URL o POSTGRES_SUPABASE_SERVICE_ROLE_KEY.');
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
+import { createAdminClient, requireUser } from '../lib/auth.js';
 
 const CATEGORIAS_VALIDAS = {
   'Shopping': '🛍️',
@@ -34,6 +21,9 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   let body = req.body;
   if (typeof body === 'string') {
     try {
@@ -50,7 +40,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabase = getSupabaseClient();
+    const supabase = createAdminClient();
     
     // 1. Procesar el texto de forma directa usando exclusivamente Groq (Llama 3)
     const gastoRaw = await analizarGastoConGroq(texto);
@@ -72,6 +62,7 @@ export default async function handler(req, res) {
       .from('gastos')
       .insert([
         {
+          user_id: user.id,
           comercio: gastoRaw.comercio || 'Compra Detectada',
           monto: parseFloat(gastoRaw.monto),
           categoria: categoriaFinal,
