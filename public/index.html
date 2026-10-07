@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" class="min-h-full bg-[#F7F4EF]">
+<html lang="es" class="min-h-full bg-[#FFF9F7]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eurovic — Tus cuentas, en orden</title>
-  <meta name="theme-color" content="#432631">
-  <meta name="description" content="Tus gastos del mes, organizados con estilo. Eurovic te ayuda a llevar tus cuentas al día.">
+  <title>Eurovic — Tu diario de gastos</title>
+  <meta name="theme-color" content="#BA647F">
+  <meta name="description" content="Tu diario de gastos, bonito y en orden.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
 
@@ -29,22 +29,22 @@
             serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
           },
           colors: {
-            cream: '#F7F4EF',
+            cream: '#FFF9F7',
             blush: {
-              50: '#FBF9F6',
-              100: '#F1EBE6',
-              200: '#E3D5CE',
-              300: '#C8ADA5',
-              400: '#A87977',
-              500: '#815159',
-              800: '#5A3640',
-              900: '#432631',
-              950: '#2B1C24',
+              50: '#FFF9FB',
+              100: '#FDEEF3',
+              200: '#F8DCE5',
+              300: '#ECBFD0',
+              400: '#D991AA',
+              500: '#BA647F',
+              800: '#744151',
+              900: '#4C2735',
+              950: '#341D28',
             },
             gold: {
-              300: '#F4E6C8',
-              400: '#D9C18F',
-              500: '#B9945C',
+              300: '#F6E5C2',
+              400: '#E9C989',
+              500: '#C7A45E',
             }
           }
         }
@@ -61,21 +61,21 @@
     }
     
     html, body { min-height: 100%; }
-    body { background: #F7F4EF; overflow-x: hidden; }
+    body { background: #FFF9F7; overflow-x: hidden; }
     button, input, select, textarea { font: inherit; }
     button { touch-action: manipulation; }
     .glass-card {
-      background: rgba(255, 255, 255, 0.84);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(162, 128, 112, 0.18);
-      box-shadow: 0 16px 42px rgba(67, 38, 49, 0.055);
+      border: 1px solid rgba(217, 145, 170, 0.20);
+      box-shadow: 0 16px 42px rgba(116, 65, 81, 0.07);
     }
 
     .active-tab {
       background: #FFFFFF;
-      color: #2B1C24;
-      box-shadow: 0 4px 14px rgba(139, 78, 94, 0.14);
+      color: #4C2735;
+      box-shadow: 0 4px 14px rgba(186, 100, 127, 0.18);
     }
 
     @keyframes toastSlide {
@@ -86,14 +86,17 @@
     .animate-toast-in {
       animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    #auth-screen { min-height: 100vh; min-height: 100dvh; padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(1.25rem, env(safe-area-inset-bottom)); background: radial-gradient(ellipse at 12% 10%, rgba(214, 190, 157, .18), transparent 42%), radial-gradient(ellipse at 92% 88%, rgba(168, 121, 119, .12), transparent 40%); }
-    #app-content { width: 100%; max-width: 32rem; min-height: 100vh; min-height: 100dvh; padding-bottom: calc(6.75rem + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #FBF9F6 0%, #F7F4EF 42%); }
+    #auth-screen { min-height: 100vh; min-height: 100dvh; padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(1.25rem, env(safe-area-inset-bottom)); background: radial-gradient(ellipse at 12% 10%, rgba(248, 220, 229, .72), transparent 42%), radial-gradient(ellipse at 92% 88%, rgba(246, 229, 194, .46), transparent 40%), #FFF9F7; }
+    #app-content { width: 100%; max-width: 32rem; min-height: 100vh; min-height: 100dvh; padding-bottom: calc(6.75rem + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #FFFBFC 0%, #FFF5F5 48%, #FFF9F7 100%); }
     #app-content > header { padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-left)) .9rem; flex-wrap: wrap; gap: .9rem; }
     #app-content > header > div:first-child { min-width: 0; width: 100%; }
     #app-content > header > div:last-child { width: 100%; }
     #app-content > main { padding: .75rem max(1rem, env(safe-area-inset-right)) 1.5rem max(1rem, env(safe-area-inset-left)); }
     #app-content nav { bottom: calc(.75rem + env(safe-area-inset-bottom)); max-width: 26rem; width: calc(100% - 2rem); }
-    #auth-screen .glass-card { border-color: rgba(185, 148, 92, .24); box-shadow: 0 24px 70px rgba(67, 38, 49, .10); }
+    #auth-screen .glass-card { border-color: rgba(217, 145, 170, .28); box-shadow: 0 24px 70px rgba(116, 65, 81, .11); }
+    .bow-divider { color: #D991AA; letter-spacing: .18em; }
+    .boutique-label { color: #BA647F; letter-spacing: .2em; }
+    #app-content nav { border-color: rgba(236, 191, 208, .7); }
     #auth-screen input { min-height: 3rem; }
     #auth-submit { min-height: 3rem; }
     #app-content main section > *, #app-content main section { min-width: 0; }
@@ -119,15 +122,16 @@
   </style>
 </head>
 
-<body class="min-h-screen bg-[#F7F4EF] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
+<body class="min-h-screen bg-[#FFF9F7] text-blush-950 flex flex-col font-sans antialiased selection:bg-blush-200">
 
   <section id="auth-screen" class="flex items-center justify-center">
     <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 sm:p-9 space-y-6">
       <div class="text-center space-y-3">
-        <img src="/icon.svg" alt="" class="w-20 h-20 mx-auto rounded-[1.35rem] shadow-xl shadow-blush-900/10">
-        <p class="text-[9px] font-bold tracking-[.32em] uppercase text-blush-400">Tus cuentas, en orden</p>
+        <img src="/icon.svg" alt="" class="w-20 h-20 mx-auto rounded-[1.4rem] shadow-xl shadow-blush-900/10">
+        <p class="text-[9px] font-bold tracking-[.32em] uppercase boutique-label">Bonito y en orden</p>
         <h1 class="font-serif text-5xl font-semibold text-blush-950 -mt-1">Eurovic</h1>
-        <p id="auth-description" class="text-xs text-blush-500">Inicia sesión para ver tus gastos.</p>
+        <p class="bow-divider text-[10px]">♡ &nbsp; 🎀 &nbsp; ♡</p>
+        <p id="auth-description" class="text-xs text-blush-500">Inicia sesión en tu rinconcito.</p>
       </div>
       <form id="auth-form" class="space-y-3">
         <input id="auth-email" type="email" autocomplete="email" required placeholder="Correo electrónico" class="w-full bg-white border border-blush-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blush-300">
@@ -143,15 +147,15 @@
 
   <div id="app-content" class="hidden w-full mx-auto flex flex-col relative sm:shadow-[0_24px_80px_rgba(67,38,49,.08)]">
 
-    <header class="flex justify-between items-center sticky top-0 bg-[#FBF9F6]/90 backdrop-blur-md z-30 border-b border-blush-100/70">
+    <header class="flex justify-between items-center sticky top-0 bg-[#FFFBFC]/90 backdrop-blur-md z-30 border-b border-blush-100/70">
       <div class="flex items-center gap-3">
         <img src="/icon.svg" alt="" class="w-12 h-12 rounded-2xl shadow-md shadow-blush-900/10">
         <div>
           <div class="flex items-center gap-2">
             <h1 class="font-serif text-[1.9rem] font-bold leading-none tracking-tight text-blush-950">Eurovic</h1>
-            <span class="inline-block w-1.5 h-1.5 rounded-full bg-gold-500 shadow-sm"></span>
+            <span class="text-[12px] leading-none" aria-hidden="true">🎀</span>
           </div>
-          <p class="text-[9px] font-bold text-blush-400 tracking-[0.18em] uppercase">Tus cuentas, en orden</p>
+          <p class="text-[9px] font-bold text-blush-400 tracking-[0.18em] uppercase">Tu diario de gastos</p>
         </div>
       </div>
 
@@ -170,10 +174,10 @@
       <section id="view-gastos" class="space-y-5">
 
         <div class="relative overflow-hidden rounded-[1.75rem] p-5 sm:p-6 bg-gradient-to-br from-white via-blush-50 to-[#EFE6DA] border border-blush-200/70 shadow-lg shadow-blush-900/5">
-          <div class="absolute -right-6 -bottom-6 w-36 h-36 rounded-full bg-gold-300/30 blur-2xl pointer-events-none"></div>
+          <div class="absolute -right-6 -bottom-6 w-36 h-36 rounded-full bg-blush-200/50 blur-2xl pointer-events-none"></div>
 
           <div class="flex justify-between items-start mb-1">
-            <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Este mes has gastado</span>
+            <span class="text-[11px] font-bold tracking-wider uppercase text-blush-500">Tu mes en números 🎀</span>
             <span id="badge-comparativa" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/80 text-blush-900 border border-blush-200 shadow-xs">
               Cargando...
             </span>
@@ -185,13 +189,13 @@
 
           <div class="flex justify-between items-center text-xs text-blush-800 font-semibold pt-2 border-t border-blush-200/60">
             <span id="txt-resumen-compras">0 compras registradas</span>
-            <span class="text-[11px] text-blush-400 font-medium">Todo bajo control ✨</span>
+            <span class="text-[11px] text-blush-400 font-medium">A tu manera ♡</span>
           </div>
         </div>
 
         <div class="space-y-3">
           <div class="flex gap-2">
-            <input type="text" id="search-input" oninput="filtrarTransacciones()" placeholder="🔍 Buscar (Zara, Sephora, Mercadona...)" class="w-full bg-white border border-blush-200 text-xs text-blush-950 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blush-300 placeholder:text-blush-300 shadow-sm">
+            <input type="text" id="search-input" oninput="filtrarTransacciones()" placeholder="♡ Buscar en tus compras..." class="w-full bg-white border border-blush-200 text-xs text-blush-950 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blush-300 placeholder:text-blush-300 shadow-sm">
           </div>
 
           <div class="flex gap-2 overflow-x-auto pb-1 text-xs no-scrollbar" id="category-filter-bar">
@@ -258,21 +262,21 @@
         
         <div class="glass-card p-4 rounded-3xl flex items-center justify-between border-blush-200 bg-white/90">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🐘</div>
+            <div class="w-9 h-9 rounded-full bg-blush-100 text-blush-500 flex items-center justify-center font-bold text-lg">🎀</div>
             <div>
-              <p class="text-xs font-extrabold text-blush-950">Sincronización activa</p>
-              <p class="text-[10px] text-blush-400 font-medium">Tus movimientos están al día</p>
+              <p class="text-xs font-extrabold text-blush-950">Todo en su sitio</p>
+              <p class="text-[10px] text-blush-400 font-medium">Tus gastos están sincronizados</p>
             </div>
           </div>
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-blush-400 animate-pulse"></span>
         </div>
 
         <div class="glass-card p-5 rounded-3xl space-y-3 bg-gradient-to-br from-white via-blush-50 to-[#F5F0E8] border-blush-200">
           <div class="flex items-center gap-2">
-            <span class="text-2xl">⚡</span>
+            <span class="text-2xl">💌</span>
             <div>
-              <h2 class="text-sm font-extrabold text-blush-950">Probar Notificación Bancaria</h2>
-              <p class="text-[11px] font-medium text-blush-400">Convierte un aviso del banco en un gasto</p>
+              <h2 class="text-sm font-extrabold text-blush-950">Tu asistente personal</h2>
+              <p class="text-[11px] font-medium text-blush-400">Pega el aviso del banco y lo convertimos en gasto</p>
             </div>
           </div>
 
@@ -286,7 +290,7 @@
             </div>
 
             <button onclick="ejecutarSimulacion()" class="w-full py-2.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-sm hover:opacity-95 transition-all text-xs flex items-center justify-center gap-1.5 mt-2">
-              <span>🚀</span> Analizar y Guardar
+              <span>✨</span> Analizar y guardar
             </button>
           </div>
         </div>
@@ -301,19 +305,19 @@
         <span>Gastos</span>
       </button>
       <button onclick="cambiarTab('analytics')" id="nav-analytics" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
-        <span class="text-base">📊</span>
-        <span>Stats</span>
+        <span class="text-base">💗</span>
+        <span>Resumen</span>
       </button>
       <button onclick="cambiarTab('sync')" id="nav-sync" class="flex-1 py-2 rounded-full text-xs font-bold flex flex-col items-center gap-0.5 text-blush-400 hover:text-blush-900 transition-all">
-        <span class="text-base">⚡</span>
-        <span>Estado</span>
+        <span class="text-base">🎀</span>
+        <span>Atajos</span>
       </button>
     </nav>
 
     <div id="modal-nuevo" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
       <div class="bg-white rounded-3xl p-6 w-full max-w-sm border border-blush-100 shadow-2xl space-y-4">
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-extrabold text-blush-950">Añadir Compra Manual ✨</h3>
+          <h3 class="text-lg font-extrabold text-blush-950">Añadir un gasto ♡</h3>
           <button onclick="cerrarModalNuevoGasto()" class="text-blush-400 hover:text-blush-950 text-2xl font-bold p-1">&times;</button>
         </div>
 
@@ -345,7 +349,7 @@
           </div>
 
           <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blush-400 to-blush-500 text-white font-bold rounded-2xl shadow-md hover:opacity-95 transition-all text-xs pt-3 mt-2">
-            Guardar compra ✨
+            Guardar gasto ♡
           </button>
         </form>
       </div>
@@ -355,7 +359,7 @@
       <div class="bg-white rounded-3xl p-6 w-full max-w-xs border border-blush-100 shadow-2xl text-center space-y-4">
         <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center text-xl mx-auto">🗑️</div>
         <h3 id="modal-confirm-title" class="text-sm font-extrabold text-blush-950">¿Eliminar estos gastos?</h3>
-        <p id="modal-confirm-msg" class="text-xs text-blush-400">Esta acción borrará el registro de la base de datos Postgres.</p>
+        <p id="modal-confirm-msg" class="text-xs text-blush-400">Esta acción eliminará el gasto de tu diario.</p>
         <div class="flex gap-2 pt-1">
           <button onclick="cerrarModalConfirm()" class="flex-1 py-2.5 rounded-xl border border-blush-200 text-xs font-bold text-blush-500 hover:bg-blush-50">Cancelar</button>
           <button id="btn-confirm-action" class="flex-1 py-2.5 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 shadow-sm">Borrar</button>
@@ -408,7 +412,7 @@
       document.getElementById('auth-toggle').addEventListener('click', () => {
         authMode = authMode === 'signin' ? 'signup' : 'signin';
         document.getElementById('auth-submit').textContent = authMode === 'signin' ? 'Iniciar sesión' : 'Crear cuenta';
-        document.getElementById('auth-description').textContent = authMode === 'signin' ? 'Inicia sesión para ver tus gastos.' : 'Crea tu cuenta personal de Eurovic.';
+        document.getElementById('auth-description').textContent = authMode === 'signin' ? 'Inicia sesión en tu rinconcito.' : 'Crea tu espacio para llevar tus gastos.';
         document.getElementById('auth-toggle').textContent = authMode === 'signin' ? '¿No tienes cuenta? Crear cuenta' : '¿Ya tienes cuenta? Iniciar sesión';
         document.getElementById('auth-error').textContent = '';
       });
@@ -458,16 +462,16 @@
     }
 
     const CATEGORIAS_CONFIG = {
-      'Shopping': { emoji: '🛍️', bg: 'bg-pink-100', text: 'text-pink-800', color: '#E879A8' },
-      'Self Care': { emoji: '💅', bg: 'bg-purple-100', text: 'text-purple-800', color: '#A855F7' },
-      'Brunch & Desayunos': { emoji: '🥐', bg: 'bg-amber-100', text: 'text-amber-800', color: '#F59E0B' },
-      'Cenas & Copas': { emoji: '🍷', bg: 'bg-rose-100', text: 'text-rose-800', color: '#E11D48' },
-      'Fiesta & Eventos': { emoji: '🎉', bg: 'bg-fuchsia-100', text: 'text-fuchsia-800', color: '#D946EF' },
-      'Ocio': { emoji: '🎟️', bg: 'bg-indigo-100', text: 'text-indigo-800', color: '#6366F1' },
-      'Supermercado': { emoji: '🛒', bg: 'bg-emerald-100', text: 'text-emerald-800', color: '#10B981' },
-      'Escapadas': { emoji: '✈️', bg: 'bg-sky-100', text: 'text-sky-800', color: '#0EA5E9' },
-      'Movilidad': { emoji: '🚗', bg: 'bg-blue-100', text: 'text-blue-800', color: '#3B82F6' },
-      'Varios': { emoji: '✨', bg: 'bg-slate-100', text: 'text-slate-800', color: '#64748B' }
+      'Shopping': { emoji: '🛍️', bg: 'bg-pink-100', text: 'text-pink-800', color: '#C77591' },
+      'Self Care': { emoji: '💅', bg: 'bg-purple-100', text: 'text-purple-800', color: '#A895B5' },
+      'Brunch & Desayunos': { emoji: '🥐', bg: 'bg-amber-100', text: 'text-amber-800', color: '#D5B46D' },
+      'Cenas & Copas': { emoji: '🍷', bg: 'bg-rose-100', text: 'text-rose-800', color: '#B96F82' },
+      'Fiesta & Eventos': { emoji: '🎉', bg: 'bg-fuchsia-100', text: 'text-fuchsia-800', color: '#C58AA3' },
+      'Ocio': { emoji: '🎟️', bg: 'bg-indigo-100', text: 'text-indigo-800', color: '#8E91B3' },
+      'Supermercado': { emoji: '🛒', bg: 'bg-emerald-100', text: 'text-emerald-800', color: '#8FAE9A' },
+      'Escapadas': { emoji: '✈️', bg: 'bg-sky-100', text: 'text-sky-800', color: '#8AA9B5' },
+      'Movilidad': { emoji: '🚗', bg: 'bg-blue-100', text: 'text-blue-800', color: '#829DB5' },
+      'Varios': { emoji: '✨', bg: 'bg-slate-100', text: 'text-slate-800', color: '#A99AA0' }
     };
 
     let todosLosGastos = [];
@@ -813,7 +817,7 @@
 
     function pedirConfirmacionBorrarUno(id) {
       document.getElementById('modal-confirm-title').innerText = '¿Borrar esta compra?';
-      document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente de Postgres.';
+      document.getElementById('modal-confirm-msg').innerText = 'Esta compra se eliminará permanentemente.';
       accionBorradoPendiente = async () => {
         const res = await apiFetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
@@ -828,7 +832,7 @@
 
     function pedirConfirmacionBorrarMes() {
       document.getElementById('modal-confirm-title').innerText = `¿Limpiar ${obtenerNombreMesLegible(mesSeleccionado)}?`;
-      document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras de este mes en Postgres.';
+      document.getElementById('modal-confirm-msg').innerText = 'Se eliminarán todas las compras de este mes.';
       accionBorradoPendiente = async () => {
         const res = await apiFetch(`/api/gastos?month=${mesSeleccionado}`, { method: 'DELETE' });
         if (res.ok) {
@@ -896,7 +900,7 @@
         if (res.ok) {
           const gastoCreado = await res.json();
           agregarGastoLocalmente(gastoCreado);
-          mostrarToast(`Añadido a Postgres: ${comercio}`, gastoCreado.emoji || '✨');
+          mostrarToast(`Añadido a tus gastos: ${comercio}`, gastoCreado.emoji || '✨');
         }
       } catch (err) {
         console.error('Error guardando gasto:', err);
