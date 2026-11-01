@@ -20,6 +20,7 @@ export default async function handler(req, res) {
 
   let stage = 'authentication';
   try {
+    logFlow(flow, traceId, 'authentication_check_started');
     const user = await requireUser(req, res);
     if (!user) {
       logFlow(flow, traceId, 'authentication_failed', { status: 401 });
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
     stage = 'ai_analysis';
     const aiStartedAt = Date.now();
     logFlow(flow, traceId, 'ai_analysis_started');
-    const gasto = await analizarAvisoBancario(texto.trim());
+    const gasto = await analizarAvisoBancario(texto.trim(), { flow, traceId });
     logFlow(flow, traceId, 'ai_analysis_completed', {
       duration_ms: Date.now() - aiStartedAt,
       accepted: gasto.esPago
@@ -68,7 +69,9 @@ export default async function handler(req, res) {
     stage = 'database_insert';
     logFlow(flow, traceId, 'database_insert_started');
     const dbStartedAt = Date.now();
+    logFlow(flow, traceId, 'database_client_creation_started');
     const supabase = createAdminClient();
+    logFlow(flow, traceId, 'database_client_created');
     const { data, error } = await supabase
       .from('gastos')
       .insert({

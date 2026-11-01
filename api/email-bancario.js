@@ -23,19 +23,29 @@ export default async function handler(req, res) {
 
   const expectedSecret = process.env.EMAIL_IMPORT_SECRET;
   const receivedSecret = req.headers['x-eurovic-secret'];
+  logFlow(flow, traceId, 'authentication_check_started', { expected_secret_configured: Boolean(expectedSecret) });
   if (!coincideSecreto(receivedSecret, expectedSecret)) {
-    logFlow(flow, traceId, 'authentication_failed', { status: 401 });
+    logFlow(flow, traceId, 'authentication_failed', {
+      reason: expectedSecret ? 'secret_mismatch' : 'secret_not_configured',
+      status: expectedSecret ? 401 : 500
+    });
     return res.status(401).json({ error: 'No autorizado.' });
   }
   logFlow(flow, traceId, 'authentication_succeeded');
 
   const userId = process.env.EMAIL_IMPORT_USER_ID;
+  logFlow(flow, traceId, 'destination_account_checked', { configured: Boolean(userId) });
   if (!userId) {
     logFlow(flow, traceId, 'configuration_failed', { reason: 'destination_user_missing', status: 500 });
     return res.status(500).json({ error: 'Falta configurar la cuenta de destino.' });
   }
 
   const { message_id: messageId, from, subject, date, text } = req.body || {};
+  logFlow(flow, traceId, 'payload_fields_checked', {
+    has_message_id: typeof messageId === 'string' && Boolean(messageId.trim()),
+    has_text: typeof text === 'string' && Boolean(text.trim()),
+    has_date: typeof date === 'string' && Boolean(date.trim())
+  });
   if (typeof messageId !== 'string' || !messageId.trim() || typeof text !== 'string' || !text.trim()) {
     logFlow(flow, traceId, 'payload_rejected', { reason: 'missing_message_id_or_text', status: 400 });
     return res.status(400).json({ error: 'Faltan el identificador del correo o su contenido.' });
@@ -58,7 +68,7 @@ export default async function handler(req, res) {
     stage = 'ai_analysis';
     const aiStartedAt = Date.now();
     logFlow(flow, traceId, 'ai_analysis_started');
-    const gasto = await analizarAvisoBancario(correo);
+    const gasto = await analizarAvisoBancario(correo, { flow, traceId });
     logFlow(flow, traceId, 'ai_analysis_completed', {
       duration_ms: Date.now() - aiStartedAt,
       accepted: gasto.esPago
@@ -75,14 +85,18 @@ export default async function handler(req, res) {
     stage = 'database_insert';
     logFlow(flow, traceId, 'database_insert_started');
     const dbStartedAt = Date.now();
+    const fechaParseable = !Number.isNaN(Date.parse(correo.date));
+    logFlow(flow, traceId, 'notification_date_checked', { provided: Boolean(correo.date), parseable: fechaParseable });
+    logFlow(flow, traceId, 'database_client_creation_started');
     const supabase = createAdminClient();
+    logFlow(flow, traceId, 'database_client_created');
     const { data, error } = await supabase.from('gastos').insert({
       user_id: userId,
       comercio: gasto.comercio,
       monto: gasto.monto,
       categoria: gasto.categoria,
       emoji: gasto.emoji,
-      fecha: Number.isNaN(Date.parse(correo.date)) ? new Date().toISOString() : new Date(correo.date).toISOString(),
+      fecha: fechaParseable ? new Date(correo.date).toISOString() : new Date().toISOString(),
       source_message_id: messageId
     }).select().single();
 
