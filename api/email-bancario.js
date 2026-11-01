@@ -1,6 +1,6 @@
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { createAdminClient } from '../lib/auth.js';
-import { analizarCorreoBancario } from '../lib/bank-email.js';
+import { analizarAvisoBancario } from '../lib/bank-email.js';
 
 function coincideSecreto(recibido, esperado) {
   if (typeof recibido !== 'string' || !esperado) return false;
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       date: typeof date === 'string' ? date.slice(0, 100) : '',
       text: text.slice(0, 30000)
     };
-    const gasto = await analizarCorreoBancario(correo);
+    const gasto = await analizarAvisoBancario(correo);
     if (!gasto.esPago) return res.status(200).json({ success: true, ignored: true });
 
     const supabase = createAdminClient();

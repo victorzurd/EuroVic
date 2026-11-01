@@ -34,7 +34,7 @@ Aplicación personal de control de gastos con captura de transacciones **asistid
 
 ## 1. Características principales
 
-- **Registro de gastos por IA**: envía el texto de una notificación bancaria a `/api/webhook` y un LLM extrae comercio, importe y categoría automáticamente — pensado para integrarse con atajos del móvil (Atajos de iOS, Tasker, etc.) que capturan notificaciones.
+- **Registro de gastos por IA**: el texto libre de la app pasa por `/api/webhook`; las notificaciones push de iOS pasan por `/api/email-bancario`. Groq extrae comercio, importe y categoría, y solo se guardan cargos confirmados en euros.
 - **Clasificación automática en 10 categorías** con emoji propio (Shopping, Self Care, Brunch & Desayunos, Cenas & Copas, Fiesta & Eventos, Ocio, Supermercado, Escapadas, Movilidad, Varios).
 - **Alta manual de gastos** desde la interfaz, sin pasar por la IA.
 - **Dashboard mensual**: total gastado, comparativa frente al mes anterior, mayor capricho, categoría top y ticket medio.
@@ -90,7 +90,7 @@ EuroVic/
 | **Node.js** 18 o superior | Necesario para las funciones serverless (`fetch` nativo) |
 | **Cuenta de Vercel** | Para desplegar el frontend y las funciones API |
 | **Proyecto de Supabase** | Base de datos PostgreSQL con la tabla `gastos` (ver más abajo) |
-| **API key de Groq** | Motor de IA usado por `/api/webhook` (obtenerla en [console.groq.com](https://console.groq.com)) |
+| **API key de Groq** | Motor de IA usado por ambos flujos de captura (obtenerla en [console.groq.com](https://console.groq.com)) |
 | **Vercel CLI** | Para ejecutar el proyecto en local con soporte de funciones serverless (`npm i -g vercel`) |
 
 ### Esquema de base de datos
@@ -149,11 +149,11 @@ No se incluye ningún fichero `.env` ni `.env.example` en el repositorio. Estas 
 | Variable | Usada en | Obligatoria | Descripción |
 | :--- | :--- | :--- | :--- |
 | `POSTGRES_SUPABASE_URL` | `api/gastos.js`, `api/webhook.js` | Sí | URL del proyecto de Supabase. |
-| `POSTGRES_SUPABASE_SERVICE_ROLE_KEY` | `api/gastos.js`, `api/webhook.js` | Sí | Clave `service_role` de Supabase (con permisos de escritura completos; **no** la clave pública `anon`). |
+| `POSTGRES_SUPABASE_SERVICE_ROLE_KEY` | `api/gastos.js`, `api/webhook.js`, `api/email-bancario.js` | Sí | Clave `service_role` de Supabase (con permisos de escritura completos; **no** la clave pública `anon`). |
 | `SUPABASE_ANON_KEY` | `api/config.js` | Sí | Clave pública `anon` del proyecto, entregada al navegador para Supabase Auth. Es pública; nunca pongas aquí la clave `service_role`. También se admite `POSTGRES_SUPABASE_ANON_KEY`. |
-| `GROQ_API_KEY` | `api/webhook.js` | Sí, para el flujo de captura por IA | Clave de la API de Groq usada para interpretar el texto de la notificación. |
-| `EMAIL_IMPORT_SECRET` | `api/email-bancario.js` | Sí, para importar correos | Secreto aleatorio compartido únicamente con el proyecto privado de Apps Script. |
-| `EMAIL_IMPORT_USER_ID` | `api/email-bancario.js` | Sí, para importar correos | UUID de la cuenta EuroVic a la que se asignan todos los pagos importados. |
+| `GROQ_API_KEY` | `api/webhook.js`, `lib/bank-email.js` | Sí, para el flujo de captura por IA | Clave de la API de Groq usada para interpretar el texto del aviso. |
+| `EMAIL_IMPORT_SECRET` | `api/email-bancario.js` | Sí, para importar avisos push | Secreto compartido entre Vercel y el atajo privado de iOS. |
+| `EMAIL_IMPORT_USER_ID` | `api/email-bancario.js` | Sí, para importar avisos push | UUID de la cuenta EuroVic a la que se asignan los pagos importados. |
 
 ```bash
 # .env.local (uso con `vercel dev`)
@@ -172,31 +172,18 @@ GROQ_API_KEY=gsk_...
 
 La tabla `gastos` debe tener una columna `user_id` de tipo `uuid`, con referencia a `auth.users(id)` y no nula. La migración incluida crea la columna, conserva los gastos anteriores asignándolos a la cuenta indicada y configura las políticas. Los usuarios nuevos solo verán sus propios registros.
 
-Las llamadas a `/api/gastos` y `/api/webhook` exigen un token de sesión. Por ello, cualquier integración externa que enviara notificaciones directamente al webhook también debe autenticarse con un token de usuario válido.
+Las llamadas a `/api/gastos` y `/api/webhook` exigen un token de sesión. La automatización push de iOS usa `/api/email-bancario` con el secreto de importación y la cuenta destino configurada en el servidor.
 
-### Importar avisos de pago de Gmail con Google Apps Script
+### Importar notificaciones push de iOS con Atajos
 
-La integración incluida consulta Gmail cada cinco minutos y envía los mensajes coincidentes a `/api/email-bancario`. El servidor usa Groq para reconocer cargos confirmados, ignora avisos que no sean pagos (por ejemplo, devoluciones o compras rechazadas) y guarda cada mensaje una sola vez en la cuenta configurada.
+El atajo de iOS envía el texto de la notificación a `POST /api/email-bancario`. El servidor usa Groq para reconocer cargos confirmados en euros, ignora avisos que no sean pagos y guarda el gasto en la cuenta configurada. Requiere una versión de iOS que incluya el activador de automatización **Notificación**.
 
-1. Ejecuta primero `supabase/migrations/20261007_auth_per_user.sql` si aún no has activado el acceso por usuario, y después `supabase/migrations/20261101_email_import_idempotency.sql`.
-2. En Vercel configura `EMAIL_IMPORT_USER_ID` con el UUID del usuario de Supabase que recibirá los gastos. Puedes encontrarlo en **Supabase → Authentication → Users**. Configura también `EMAIL_IMPORT_SECRET` con un valor aleatorio largo (32 bytes o más); usa el mismo valor en Apps Script. No lo pongas en la web ni en un repositorio público.
-3. Despliega EuroVic con `vercel --prod`.
-4. Abre [script.google.com](https://script.google.com), crea un proyecto y copia el contenido de `scripts/gmail-eurovic.gs`.
-5. En **Configuración del proyecto → Propiedades del script**, crea estas propiedades:
+1. Ejecuta `supabase/migrations/20261101_email_import_idempotency.sql` después de la migración de autenticación.
+2. En Vercel configura `EMAIL_IMPORT_USER_ID` con el UUID de la cuenta destino y `EMAIL_IMPORT_SECRET` con un secreto aleatorio largo (32 bytes o más). No incluyas el secreto en un repositorio público.
+3. En Atajos crea una automatización para la notificación de la app del banco. Pasa su texto como `text` y crea un `message_id` único (por ejemplo, fecha más número aleatorio).
+4. Añade **Obtener contenido de URL** con la URL `https://TU-DOMINIO.vercel.app/api/email-bancario`, método `POST`, cuerpo JSON y encabezado `X-Eurovic-Secret` con el mismo secreto de Vercel.
 
-   | Propiedad | Valor |
-   | :--- | :--- |
-   | `EUROVIC_ENDPOINT` | `https://TU-DOMINIO.vercel.app/api/email-bancario` |
-   | `EUROVIC_SECRET` | El mismo valor configurado como `EMAIL_IMPORT_SECRET` en Vercel |
-   | `GMAIL_QUERY` | Una búsqueda de Gmail limitada a los avisos del banco, por ejemplo `from:avisos@banco.es` |
-   | `BANK_SENDER` | La dirección exacta que aparece como remitente, por ejemplo `avisos@banco.es` |
-
-   Sustituye el remitente del ejemplo por el que aparece realmente en los correos de tu banco. Puedes afinar la búsqueda con operadores de Gmail, por ejemplo `from:avisos@banco.es subject:compra`. `BANK_SENDER` evita enviar mensajes de otro remitente aunque Gmail devuelva el hilo completo.
-6. Ejecuta manualmente `instalarTrigger` desde Apps Script y acepta los permisos para leer Gmail y conectarse a EuroVic. El trigger consultará los correos cada cinco minutos. Los mensajes importados se marcan con la etiqueta `EuroVic-Procesados`; los fallidos se vuelven a intentar.
-
-La columna `source_message_id` y su índice único hacen idempotentes los reintentos. El contenido de correo se envía a Groq para extraer comercio, importe y categoría; evita incluir en el filtro correos que no quieras procesar. No se guarda el cuerpo completo del correo en Supabase. El endpoint de importación usa el secreto compartido y el UUID de destino del servidor, por lo que no necesita una sesión interactiva de EuroVic.
-
-El endpoint nuevo es `POST /api/email-bancario`; Apps Script envía `X-Eurovic-Secret` y un JSON con `message_id`, `from`, `subject`, `date` y `text`. No lo llames desde el navegador.
+El endpoint `POST /api/email-bancario` recibe `X-Eurovic-Secret` y un JSON con `message_id` y `text`, además de los campos opcionales `from`, `subject` y `date`. No lo llames desde el navegador. La columna `source_message_id` evita repetir la misma importación cuando se reutiliza el mismo identificador. El texto de la notificación se envía a Groq para extraer el comercio, importe y categoría; no se guarda el texto completo en Supabase.
 
 ---
 
@@ -256,7 +243,7 @@ curl -X DELETE "http://localhost:3000/api/gastos?month=2026-09"
 
 ### 6.4. `POST /api/webhook` — capturar gasto desde texto libre (IA)
 
-Punto de entrada pensado para atajos automatizados: recibe el texto de una notificación bancaria, lo interpreta con **Groq (Llama 3 / `gpt-oss-120b`)** y guarda el gasto directamente en Supabase.
+Recibe texto libre desde la interfaz con una sesión activa, lo interpreta con **Groq (`openai/gpt-oss-120b`)** y guarda el gasto directamente en Supabase. Para la automatización de notificaciones push usa el endpoint de la sección anterior.
 
 ```bash
 curl -X POST http://localhost:3000/api/webhook \
