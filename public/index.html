@@ -712,13 +712,13 @@
         <div class="bg-white p-3.5 rounded-2xl border border-blush-100/80 shadow-xs flex justify-between items-center transition-all hover:border-blush-300">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl ${conf.bg} flex items-center justify-center text-xl shrink-0">
-              ${g.emoji || conf.emoji}
+              ${escaparHTML(g.emoji || conf.emoji)}
             </div>
             <div>
-              <p class="font-extrabold text-xs text-blush-950">${g.comercio}</p>
+              <p class="font-extrabold text-xs text-blush-950">${escaparHTML(g.comercio)}</p>
               <div class="flex flex-wrap items-center gap-2 mt-0.5">
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${conf.bg} ${conf.text}">${g.categoria}</span>
-                <span class="text-[10px] text-blush-300 font-medium">${formatearFecha(g.fecha)}</span>
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${conf.bg} ${conf.text}">${escaparHTML(g.categoria)}</span>
+                <span class="text-[10px] text-blush-300 font-medium">${escaparHTML(formatearFecha(g.fecha))}</span>
               </div>
             </div>
           </div>
@@ -730,6 +730,12 @@
           </div>
         </div>
       `;
+    }
+
+    function escaparHTML(valor) {
+      return String(valor).replace(/[&<>"']/g, caracter => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[caracter]);
     }
 
     function renderizarEstadisticas(gastosMes) {
@@ -916,8 +922,8 @@
       const toast = document.createElement('div');
       toast.className = 'bg-blush-950/95 text-white px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-blush-400/40 flex items-center gap-3 transition-all transform translate-y-[-20px] opacity-0 animate-toast-in';
       toast.innerHTML = `
-        <span class="text-lg">${emoji}</span>
-        <span class="text-xs font-bold tracking-wide">${mensaje}</span>
+        <span class="text-lg">${escaparHTML(emoji)}</span>
+        <span class="text-xs font-bold tracking-wide">${escaparHTML(mensaje)}</span>
       `;
       container.appendChild(toast);
       

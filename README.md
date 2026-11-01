@@ -152,6 +152,8 @@ No se incluye ningún fichero `.env` ni `.env.example` en el repositorio. Estas 
 | `POSTGRES_SUPABASE_SERVICE_ROLE_KEY` | `api/gastos.js`, `api/webhook.js` | Sí | Clave `service_role` de Supabase (con permisos de escritura completos; **no** la clave pública `anon`). |
 | `SUPABASE_ANON_KEY` | `api/config.js` | Sí | Clave pública `anon` del proyecto, entregada al navegador para Supabase Auth. Es pública; nunca pongas aquí la clave `service_role`. También se admite `POSTGRES_SUPABASE_ANON_KEY`. |
 | `GROQ_API_KEY` | `api/webhook.js` | Sí, para el flujo de captura por IA | Clave de la API de Groq usada para interpretar el texto de la notificación. |
+| `EMAIL_IMPORT_SECRET` | `api/email-bancario.js` | Sí, para importar correos | Secreto aleatorio compartido únicamente con el proyecto privado de Apps Script. |
+| `EMAIL_IMPORT_USER_ID` | `api/email-bancario.js` | Sí, para importar correos | UUID de la cuenta EuroVic a la que se asignan todos los pagos importados. |
 
 ```bash
 # .env.local (uso con `vercel dev`)
@@ -171,6 +173,30 @@ GROQ_API_KEY=gsk_...
 La tabla `gastos` debe tener una columna `user_id` de tipo `uuid`, con referencia a `auth.users(id)` y no nula. La migración incluida crea la columna, conserva los gastos anteriores asignándolos a la cuenta indicada y configura las políticas. Los usuarios nuevos solo verán sus propios registros.
 
 Las llamadas a `/api/gastos` y `/api/webhook` exigen un token de sesión. Por ello, cualquier integración externa que enviara notificaciones directamente al webhook también debe autenticarse con un token de usuario válido.
+
+### Importar avisos de pago de Gmail con Google Apps Script
+
+La integración incluida consulta Gmail cada cinco minutos y envía los mensajes coincidentes a `/api/email-bancario`. El servidor usa Groq para reconocer cargos confirmados, ignora avisos que no sean pagos (por ejemplo, devoluciones o compras rechazadas) y guarda cada mensaje una sola vez en la cuenta configurada.
+
+1. Ejecuta primero `supabase/migrations/20261007_auth_per_user.sql` si aún no has activado el acceso por usuario, y después `supabase/migrations/20261101_email_import_idempotency.sql`.
+2. En Vercel configura `EMAIL_IMPORT_USER_ID` con el UUID del usuario de Supabase que recibirá los gastos. Puedes encontrarlo en **Supabase → Authentication → Users**. Configura también `EMAIL_IMPORT_SECRET` con un valor aleatorio largo (32 bytes o más); usa el mismo valor en Apps Script. No lo pongas en la web ni en un repositorio público.
+3. Despliega EuroVic con `vercel --prod`.
+4. Abre [script.google.com](https://script.google.com), crea un proyecto y copia el contenido de `scripts/gmail-eurovic.gs`.
+5. En **Configuración del proyecto → Propiedades del script**, crea estas propiedades:
+
+   | Propiedad | Valor |
+   | :--- | :--- |
+   | `EUROVIC_ENDPOINT` | `https://TU-DOMINIO.vercel.app/api/email-bancario` |
+   | `EUROVIC_SECRET` | El mismo valor configurado como `EMAIL_IMPORT_SECRET` en Vercel |
+   | `GMAIL_QUERY` | Una búsqueda de Gmail limitada a los avisos del banco, por ejemplo `from:avisos@banco.es` |
+   | `BANK_SENDER` | La dirección exacta que aparece como remitente, por ejemplo `avisos@banco.es` |
+
+   Sustituye el remitente del ejemplo por el que aparece realmente en los correos de tu banco. Puedes afinar la búsqueda con operadores de Gmail, por ejemplo `from:avisos@banco.es subject:compra`. `BANK_SENDER` evita enviar mensajes de otro remitente aunque Gmail devuelva el hilo completo.
+6. Ejecuta manualmente `instalarTrigger` desde Apps Script y acepta los permisos para leer Gmail y conectarse a EuroVic. El trigger consultará los correos cada cinco minutos. Los mensajes importados se marcan con la etiqueta `EuroVic-Procesados`; los fallidos se vuelven a intentar.
+
+La columna `source_message_id` y su índice único hacen idempotentes los reintentos. El contenido de correo se envía a Groq para extraer comercio, importe y categoría; evita incluir en el filtro correos que no quieras procesar. No se guarda el cuerpo completo del correo en Supabase. El endpoint de importación usa el secreto compartido y el UUID de destino del servidor, por lo que no necesita una sesión interactiva de EuroVic.
+
+El endpoint nuevo es `POST /api/email-bancario`; Apps Script envía `X-Eurovic-Secret` y un JSON con `message_id`, `from`, `subject`, `date` y `text`. No lo llames desde el navegador.
 
 ---
 
