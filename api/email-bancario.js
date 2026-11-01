@@ -81,7 +81,19 @@ export default async function handler(req, res) {
   });
   if (typeof text !== 'string' || !text.trim()) {
     logFlow(flow, traceId, 'payload_rejected', { reason: 'missing_notification_text', status: 400 });
-    return res.status(400).json({ error: 'Falta el texto de la notificación bancaria.' });
+    return res.status(400).json({
+      error: 'Falta el texto de la notificación bancaria.',
+      debug: {
+        received_body: req.body ?? null,
+        interpreted_fields: {
+          message_id_provided: messageIdProvided,
+          text_found: false,
+          date_found: Boolean(date),
+          sender_found: typeof from === 'string' && Boolean(from.trim()),
+          subject_found: typeof subject === 'string' && Boolean(subject.trim())
+        }
+      }
+    });
   }
   if (messageId.length > 300 || text.length > 30000) {
     logFlow(flow, traceId, 'payload_rejected', { reason: 'payload_too_large', status: 413 });

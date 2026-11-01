@@ -34,7 +34,7 @@ Aplicación personal de control de gastos con captura de transacciones **asistid
 
 ## 1. Características principales
 
-- **Registro de gastos por IA**: el texto libre de la app pasa por `/api/webhook`; las notificaciones push de iOS pasan por `/api/email-bancario`. Groq extrae comercio, importe y categoría. Para pruebas, los Bizum recibidos en euros se registran como gastos de la categoría Varios y con comercio `Bizum` si no se identifica al remitente.
+- **Registro de gastos por IA**: el texto libre de la app pasa por `/api/webhook`; las notificaciones push de iOS pasan por `/api/email-bancario`. Groq extrae comercio, importe y categoría. Solo se registran salidas de dinero confirmadas en euros; los Bizum recibidos, reembolsos y operaciones pendientes se ignoran.
 - **Clasificación automática en 10 categorías** con emoji propio (Shopping, Self Care, Brunch & Desayunos, Cenas & Copas, Fiesta & Eventos, Ocio, Supermercado, Escapadas, Movilidad, Varios).
 - **Alta manual de gastos** desde la interfaz, sin pasar por la IA.
 - **Dashboard mensual**: total gastado, comparativa frente al mes anterior, mayor capricho, categoría top y ticket medio.
@@ -185,7 +185,7 @@ El atajo de iOS envía el texto de la notificación a `POST /api/email-bancario`
 
 El endpoint `POST /api/email-bancario` recibe `X-Eurovic-Secret` y el texto de la notificación (`text`, `notification`, `message` o texto plano); `message_id` es opcional y se genera en el servidor si falta. También admite los campos opcionales `from`, `subject` y `date`. No lo llames desde el navegador. La columna `source_message_id` evita repetir la misma importación cuando se reutiliza el mismo identificador. El texto de la notificación se envía a Groq para extraer el comercio, importe y categoría; no se guarda el texto completo en Supabase.
 
-Las notificaciones que indiquen claramente un Bizum recibido y su importe en euros se registran, solo para pruebas, como gasto de categoría `Varios`. Si no se identifica al remitente, el comercio guardado será `Bizum`. Los Bizum enviados no entran en esta regla.
+Las notificaciones de Bizum recibido no se registran como gastos. Un Bizum enviado solo se registra cuando el aviso confirma que se completó; se clasifica en `Varios` y, si no aparece el destinatario, se guarda como `Bizum`.
 
 ---
 
