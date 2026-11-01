@@ -10,6 +10,39 @@ function coincideSecreto(recibido, esperado) {
   return timingSafeEqual(a, b) && recibido.length === esperado.length;
 }
 
+function normalizarPayload(entrada) {
+  let body = entrada;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      body = { text: body };
+    }
+  }
+  if (typeof body === 'string') body = { text: body };
+  if (!body || typeof body !== 'object' || Array.isArray(body)) body = {};
+
+  const datosAnidados = [body.notification, body.notificacion, body.input, body.data]
+    .find((value) => value && typeof value === 'object' && !Array.isArray(value)) || {};
+  const valorTexto = body.text ?? body.notification_text ?? body.notificacion_texto
+    ?? body.notificacion ?? body.notification ?? body.message ?? body.contenido
+    ?? body.input ?? body.input_text ?? body.shortcut_input ?? body.shortcutInput
+    ?? body.body ?? body['Shortcut Input']
+    ?? datosAnidados.text ?? datosAnidados.body ?? datosAnidados.content ?? datosAnidados.message;
+
+  const valorId = body.message_id ?? body.messageId ?? body.id
+    ?? datosAnidados.message_id ?? datosAnidados.messageId ?? datosAnidados.id;
+
+  return {
+    messageId: typeof valorId === 'string' && valorId.trim() ? valorId.trim() : randomUUID(),
+    messageIdProvided: typeof valorId === 'string' && Boolean(valorId.trim()),
+    from: body.from ?? body.sender ?? datosAnidados.from ?? datosAnidados.sender,
+    subject: body.subject ?? datosAnidados.subject,
+    date: body.date ?? body.timestamp ?? datosAnidados.date ?? datosAnidados.timestamp,
+    text: typeof valorTexto === 'string' ? valorTexto : ''
+  };
+}
+
 export default async function handler(req, res) {
   const traceId = randomUUID();
   const flow = 'bank_notification_push';
@@ -40,21 +73,24 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Falta configurar la cuenta de destino.' });
   }
 
-  const { message_id: messageId, from, subject, date, text } = req.body || {};
+  const { messageId, messageIdProvided, from, subject, date, text } = normalizarPayload(req.body);
   logFlow(flow, traceId, 'payload_fields_checked', {
-    has_message_id: typeof messageId === 'string' && Boolean(messageId.trim()),
+    message_id_provided: messageIdProvided,
     has_text: typeof text === 'string' && Boolean(text.trim()),
-    has_date: typeof date === 'string' && Boolean(date.trim())
+    has_date: typeof date === 'string' && Boolean(date)
   });
-  if (typeof messageId !== 'string' || !messageId.trim() || typeof text !== 'string' || !text.trim()) {
-    logFlow(flow, traceId, 'payload_rejected', { reason: 'missing_message_id_or_text', status: 400 });
-    return res.status(400).json({ error: 'Faltan el identificador del correo o su contenido.' });
+  if (typeof text !== 'string' || !text.trim()) {
+    logFlow(flow, traceId, 'payload_rejected', { reason: 'missing_notification_text', status: 400 });
+    return res.status(400).json({ error: 'Falta el texto de la notificación bancaria.' });
   }
   if (messageId.length > 300 || text.length > 30000) {
     logFlow(flow, traceId, 'payload_rejected', { reason: 'payload_too_large', status: 413 });
-    return res.status(413).json({ error: 'El correo supera el tamaño permitido.' });
+    return res.status(413).json({ error: 'La notificación supera el tamaño permitido.' });
   }
-  logFlow(flow, traceId, 'payload_validated', { text_length: text.length });
+  logFlow(flow, traceId, 'payload_validated', {
+    text_length: text.length,
+    message_id_generated: !messageIdProvided
+  });
 
   let stage = 'prepare_notification';
   try {

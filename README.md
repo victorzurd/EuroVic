@@ -183,7 +183,7 @@ El atajo de iOS envía el texto de la notificación a `POST /api/email-bancario`
 3. En Atajos crea una automatización para la notificación de la app del banco. Pasa su texto como `text` y crea un `message_id` único (por ejemplo, fecha más número aleatorio).
 4. Añade **Obtener contenido de URL** con la URL `https://TU-DOMINIO.vercel.app/api/email-bancario`, método `POST`, cuerpo JSON y encabezado `X-Eurovic-Secret` con el mismo secreto de Vercel.
 
-El endpoint `POST /api/email-bancario` recibe `X-Eurovic-Secret` y un JSON con `message_id` y `text`, además de los campos opcionales `from`, `subject` y `date`. No lo llames desde el navegador. La columna `source_message_id` evita repetir la misma importación cuando se reutiliza el mismo identificador. El texto de la notificación se envía a Groq para extraer el comercio, importe y categoría; no se guarda el texto completo en Supabase.
+El endpoint `POST /api/email-bancario` recibe `X-Eurovic-Secret` y el texto de la notificación (`text`, `notification`, `message` o texto plano); `message_id` es opcional y se genera en el servidor si falta. También admite los campos opcionales `from`, `subject` y `date`. No lo llames desde el navegador. La columna `source_message_id` evita repetir la misma importación cuando se reutiliza el mismo identificador. El texto de la notificación se envía a Groq para extraer el comercio, importe y categoría; no se guarda el texto completo en Supabase.
 
 Las notificaciones que indiquen claramente un Bizum recibido y su importe en euros se registran, solo para pruebas, como gasto de categoría `Varios`. Si no se identifica al remitente, el comercio guardado será `Bizum`. Los Bizum enviados no entran en esta regla.
 
